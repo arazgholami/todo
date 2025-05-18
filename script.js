@@ -342,10 +342,11 @@ function createTodoElement(todo) {
         if (draggingEl !== todoEl) {
             const rect = todoEl.getBoundingClientRect();
             const midY = rect.top + rect.height / 2;
+            const container = todoEl.parentNode;
             if (e.clientY < midY) {
-                todoEl.parentNode.insertBefore(draggingEl, todoEl);
+                container.insertBefore(draggingEl, todoEl);
             } else {
-                todoEl.parentNode.insertBefore(draggingEl, todoEl.nextSibling);
+                container.insertBefore(draggingEl, todoEl.nextSibling);
             }
         }
     });
@@ -357,18 +358,44 @@ function createTodoElement(todo) {
         const targetTodo = state.todos.find(t => t.id === todo.id);
         
         if (draggedTodo && targetTodo) {
-            const draggedIndex = state.todos.indexOf(draggedTodo);
-            const targetIndex = state.todos.indexOf(targetTodo);
+            // Get all todos in the current category
+            const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
             
-            // Remove the dragged todo
-            state.todos.splice(draggedIndex, 1);
-            // Insert it at the new position
-            state.todos.splice(targetIndex, 0, draggedTodo);
+            // Get the container elements
+            const activeContainer = document.getElementById('active-items');
+            const completedContainer = document.getElementById('completed-items');
             
-            // Update the createdAt timestamp to maintain the new order
+            // Get all todo elements in the current container
+            const container = todoEl.parentNode;
+            const todoElements = Array.from(container.children);
+            
+            // Find the new index based on the DOM position
+            const newIndex = todoElements.indexOf(todoEl);
+            
+            // Remove the dragged todo from its current position
+            const currentIndex = state.todos.indexOf(draggedTodo);
+            state.todos.splice(currentIndex, 1);
+            
+            // Find the correct insertion index in the full todos array
+            let insertIndex = 0;
+            for (let i = 0; i < state.todos.length; i++) {
+                if (state.todos[i].categoryId === state.currentCategoryId) {
+                    if (insertIndex === newIndex) {
+                        break;
+                    }
+                    insertIndex++;
+                }
+            }
+            
+            // Insert the todo at the new position
+            state.todos.splice(insertIndex, 0, draggedTodo);
+            
+            // Update timestamps to maintain order
             const now = Date.now();
             state.todos.forEach((todo, index) => {
-                todo.createdAt = now - index;
+                if (todo.categoryId === state.currentCategoryId) {
+                    todo.createdAt = now - index;
+                }
             });
             
             saveData();
@@ -447,23 +474,27 @@ function createTodoElement(todo) {
     const reminderIcon = document.createElement('i');
     reminderIcon.className = `todo-button fas ${todo.reminder ? 'fa-bell' : 'fa-bell-slash'} reminder-icon me-2`;
     reminderIcon.style.color = todo.reminder ? '#ff9800' : '';
-    reminderIcon.title = todo.reminder ? 'Reminder set' : 'Set reminder';
+    reminderIcon.title = todo.reminder ? 'Disable reminder' : 'Set reminder';
     reminderIcon.addEventListener('click', () => {
-        currentReminderTodoId = todo.id;
-        const reminderDate = document.getElementById('reminder-date');
-        const reminderTime = document.getElementById('reminder-time');
-        
         if (todo.reminder) {
-            const reminderDateObj = new Date(todo.reminder);
-            reminderDate.value = reminderDateObj.toISOString().split('T')[0];
-            reminderTime.value = reminderDateObj.toTimeString().slice(0, 5);
+            // If reminder exists, disable it
+            todo.reminder = null;
+            if (todo.notificationTimeout) {
+                clearTimeout(todo.notificationTimeout);
+                todo.notificationTimeout = null;
+            }
+            saveData();
+            renderTodos();
         } else {
+            // If no reminder, open modal to set one
+            currentReminderTodoId = todo.id;
+            const reminderDate = document.getElementById('reminder-date');
+            const reminderTime = document.getElementById('reminder-time');
             const now = new Date();
             reminderDate.value = now.toISOString().split('T')[0];
             reminderTime.value = now.toTimeString().slice(0, 5);
+            reminderModal.show();
         }
-        
-        reminderModal.show();
     });
 
     const deleteIcon = document.createElement('i');
