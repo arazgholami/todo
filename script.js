@@ -206,13 +206,18 @@ async function addTodo() {
     const todoText = newTodoInput.value.trim();
     if (todoText) {
         const now = Date.now();
+        // Get the current highest order in the category
+        const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
+        const maxOrder = categoryTodos.length > 0 ? Math.max(...categoryTodos.map(t => t.order || 0)) : -1;
+        
         const newTodo = {
             id: generateId(),
             text: todoText,
             completed: false,
             categoryId: state.currentCategoryId,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            order: maxOrder + 1
         };
 
         state.todos.unshift(newTodo);
@@ -307,10 +312,10 @@ function renderTodos() {
 
 
     const activeTodos = filteredTodos.filter(todo => !todo.completed)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
 
     const completedTodos = filteredTodos.filter(todo => todo.completed)
-    .sort((a, b) => b.completedAt - a.completedAt);
+        .sort((a, b) => b.completedAt - a.completedAt);
 
 
     activeItemsContainer.innerHTML = '';
@@ -362,18 +367,9 @@ function createTodoElement(todo) {
         const targetTodo = state.todos.find(t => t.id === todo.id);
         
         if (draggedTodo && targetTodo) {
-            // Get all todos in the current category
-            const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
-            
-            // Get the container elements
-            const activeContainer = document.getElementById('active-items');
-            const completedContainer = document.getElementById('completed-items');
-            
-            // Get all todo elements in the current container
+            const now = Date.now();
             const container = todoEl.parentNode;
             const todoElements = Array.from(container.children);
-            
-            // Find the new index based on the DOM position
             const newIndex = todoElements.indexOf(todoEl);
             
             // Remove the dragged todo from its current position
@@ -394,12 +390,11 @@ function createTodoElement(todo) {
             // Insert the todo at the new position
             state.todos.splice(insertIndex, 0, draggedTodo);
             
-            // Update timestamps to maintain order
-            const now = Date.now();
-            state.todos.forEach((todo, index) => {
-                if (todo.categoryId === state.currentCategoryId) {
-                    todo.createdAt = now - index;
-                }
+            // Update the order of all todos in the current category
+            const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
+            categoryTodos.forEach((todo, index) => {
+                todo.order = index;
+                todo.updatedAt = now;
             });
             
             saveData();
