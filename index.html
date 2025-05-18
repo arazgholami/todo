@@ -6,17 +6,17 @@
     <meta name="theme-color" content="#6366f1">
     <meta name="description" content="A simple todo application that works offline">
     <title>ToDo</title>
-    <link rel="shortcut icon" href="./todo-icon.png?ver=1.1-2025" type="image/png">
-    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.1-2025">
+    <link rel="shortcut icon" href="./todo-icon.png?ver=1.2-2025" type="image/png">
+    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.2-2025">
     <link rel="manifest" href="./manifest.json">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?ver=1.1-2025">
+    <link rel="stylesheet" href="./style.css?ver=1.2-2025">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="sync.js?ver=1.1-2025" defer></script>
-    <script src="script.js?ver=1.1-2025" defer></script>
+    <script src="sync.js?ver=1.2-2025" defer></script>
+    <script src="script.js?ver=1.2-2025" defer></script>
 </head>
 <body>
     <button class="sidebar-toggle d-md-none">
@@ -60,7 +60,7 @@
     <div class="footer">
         <a href="https://arazgholami.github.io/todo/" target="_blank" rel="noopener noreferrer" class="text-decoration-none logo-wrapper">
             <span class="logo">
-                <img src="todo.png?ver=1.1-2025" alt="ToDo Logo">
+                <img src="todo.png?ver=1.2-2025" alt="ToDo Logo">
                 ToDo
             </span>
         </a>
@@ -118,6 +118,30 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" id="confirm-delete-category-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="reminderModal" tabindex="-1" aria-labelledby="reminderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reminderModalLabel">Set Reminder</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reminder-date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="reminder-date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reminder-time" class="form-label">Time</label>
+                        <input type="time" class="form-control" id="reminder-time">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirm-reminder-btn">Set Reminder</button>
                 </div>
             </div>
         </div>

@@ -20,7 +20,9 @@ let confirmMoveBtn;
 let moveTaskModal;
 let deleteTaskModal;
 let deleteCategoryModal;
-let currentMovingTodoId = null;
+let reminderModal;
+let confirmReminderBtn;
+let currentReminderTodoId = null;
 let currentDeletingTodoId = null;
 let currentDeletingCategoryId = null;
 let sidebarOpen = false;
@@ -297,9 +299,7 @@ function renderTodos() {
     };
 
 
-    let filteredTodos = state.currentCategoryId === 'default'
-    ? state.todos
-    : state.todos.filter(todo => todo.categoryId === state.currentCategoryId);
+    let filteredTodos = state.todos.filter(todo => todo.categoryId === state.currentCategoryId);
 
 
     const activeTodos = filteredTodos.filter(todo => !todo.completed)
@@ -451,8 +451,29 @@ function createTodoElement(todo) {
         deleteTaskModal.show();
     });
 
+    const reminderIcon = document.createElement('i');
+    reminderIcon.className = `todo-button fas ${todo.reminder ? 'fa-bell' : 'fa-bell-slash'} reminder-icon me-2`;
+    reminderIcon.title = todo.reminder ? 'Reminder set' : 'Set reminder';
+    reminderIcon.addEventListener('click', () => {
+        currentReminderTodoId = todo.id;
+        const reminderDate = document.getElementById('reminder-date');
+        const reminderTime = document.getElementById('reminder-time');
+        
+        if (todo.reminder) {
+            reminderDate.value = new Date(todo.reminder).toISOString().split('T')[0];
+            reminderTime.value = new Date(todo.reminder).toTimeString().slice(0, 5);
+        } else {
+            const now = new Date();
+            reminderDate.value = now.toISOString().split('T')[0];
+            reminderTime.value = now.toTimeString().slice(0, 5);
+        }
+        
+        reminderModal.show();
+    });
+
     actionsDiv.appendChild(moveIcon);
     actionsDiv.appendChild(deleteIcon);
+    actionsDiv.appendChild(reminderIcon);
     todoEl.appendChild(actionsDiv);
 
     return todoEl;
@@ -535,6 +556,47 @@ function addSyncUI() {
     });
 }
 
+// Add these new functions for reminder handling
+async function setReminder(todoId, date, time) {
+    const todo = state.todos.find(t => t.id === todoId);
+    if (todo) {
+        const reminderDate = new Date(`${date}T${time}`);
+        todo.reminder = reminderDate.getTime();
+        await saveData();
+        renderTodos();
+        scheduleNotification(todo);
+    }
+}
+
+function scheduleNotification(todo) {
+    if (!todo.reminder) return;
+    
+    const now = Date.now();
+    const timeUntilReminder = todo.reminder - now;
+    
+    if (timeUntilReminder > 0) {
+        setTimeout(() => {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification('Task Reminder', {
+                        body: todo.text,
+                        icon: './todo-icon.png'
+                    });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('Task Reminder', {
+                                body: todo.text,
+                                icon: './todo-icon.png'
+                            });
+                        }
+                    });
+                }
+            }
+        }, timeUntilReminder);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
     categoriesList = document.getElementById('categories-list');
@@ -549,6 +611,8 @@ document.addEventListener('DOMContentLoaded', function() {
     moveTaskModal = new bootstrap.Modal(document.getElementById('moveTaskModal'));
     deleteTaskModal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
     deleteCategoryModal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+    reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
+    confirmReminderBtn = document.getElementById('confirm-reminder-btn');
 
 
     loadData();
@@ -622,4 +686,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add sync UI
     addSyncUI();
+
+    confirmReminderBtn.addEventListener('click', () => {
+        const date = document.getElementById('reminder-date').value;
+        const time = document.getElementById('reminder-time').value;
+        
+        if (date && time) {
+            setReminder(currentReminderTodoId, date, time);
+            reminderModal.hide();
+        }
+    });
+    
+    // Request notification permission on startup
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+    
+    // Schedule notifications for existing reminders
+    state.todos.forEach(todo => {
+        if (todo.reminder) {
+            scheduleNotification(todo);
+        }
+    });
 });
