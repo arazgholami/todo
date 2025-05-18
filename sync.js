@@ -132,15 +132,25 @@ class TodoSync {
     mergeTodos(currentTodos, newTodos) {
         const todoMap = new Map();
         
-        // Add all todos to map
-        [...currentTodos, ...newTodos].forEach(todo => {
+        // First, add all current todos to map
+        currentTodos.forEach(todo => {
+            todoMap.set(todo.id, todo);
+        });
+        
+        // Then merge in new todos, preserving order
+        newTodos.forEach(todo => {
             const existing = todoMap.get(todo.id);
-            if (!existing || todo.createdAt > existing.createdAt) {
+            if (!existing) {
+                // If it's a new todo, add it
+                todoMap.set(todo.id, todo);
+            } else if (todo.updatedAt > existing.updatedAt) {
+                // If the new version is more recent, update it
                 todoMap.set(todo.id, todo);
             }
         });
 
-        return Array.from(todoMap.values());
+        // Convert back to array and sort by createdAt
+        return Array.from(todoMap.values()).sort((a, b) => b.createdAt - a.createdAt);
     }
 
     mergeCategories(currentCategories, newCategories) {

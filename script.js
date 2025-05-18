@@ -205,12 +205,14 @@ async function confirmDeleteCategory() {
 async function addTodo() {
     const todoText = newTodoInput.value.trim();
     if (todoText) {
+        const now = Date.now();
         const newTodo = {
             id: generateId(),
             text: todoText,
             completed: false,
             categoryId: state.currentCategoryId,
-            createdAt: Date.now()
+            createdAt: now,
+            updatedAt: now
         };
 
         state.todos.unshift(newTodo);
@@ -223,10 +225,12 @@ async function addTodo() {
 async function toggleTodo(todoId) {
     const todo = state.todos.find(t => t.id === todoId);
     if (todo) {
+        const now = Date.now();
         todo.completed = !todo.completed;
+        todo.updatedAt = now;
 
         if (todo.completed) {
-            todo.completedAt = Date.now();
+            todo.completedAt = now;
         }
         renderTodos();
         await saveData();
@@ -303,7 +307,7 @@ function renderTodos() {
 
 
     const activeTodos = filteredTodos.filter(todo => !todo.completed)
-    .sort((a, b) => b.createdAt - a.createdAt);
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 
     const completedTodos = filteredTodos.filter(todo => todo.completed)
     .sort((a, b) => b.completedAt - a.completedAt);
