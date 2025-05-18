@@ -453,6 +453,7 @@ function createTodoElement(todo) {
 
     const reminderIcon = document.createElement('i');
     reminderIcon.className = `todo-button fas ${todo.reminder ? 'fa-bell' : 'fa-bell-slash'} reminder-icon me-2`;
+    reminderIcon.style.color = todo.reminder ? '#ff9800' : '';
     reminderIcon.title = todo.reminder ? 'Reminder set' : 'Set reminder';
     reminderIcon.addEventListener('click', () => {
         currentReminderTodoId = todo.id;
@@ -460,8 +461,9 @@ function createTodoElement(todo) {
         const reminderTime = document.getElementById('reminder-time');
         
         if (todo.reminder) {
-            reminderDate.value = new Date(todo.reminder).toISOString().split('T')[0];
-            reminderTime.value = new Date(todo.reminder).toTimeString().slice(0, 5);
+            const reminderDateObj = new Date(todo.reminder);
+            reminderDate.value = reminderDateObj.toISOString().split('T')[0];
+            reminderTime.value = reminderDateObj.toTimeString().slice(0, 5);
         } else {
             const now = new Date();
             reminderDate.value = now.toISOString().split('T')[0];
@@ -560,7 +562,10 @@ function addSyncUI() {
 async function setReminder(todoId, date, time) {
     const todo = state.todos.find(t => t.id === todoId);
     if (todo) {
-        const reminderDate = new Date(`${date}T${time}`);
+        const [year, month, day] = date.split('-').map(Number);
+        const [hours, minutes] = time.split(':').map(Number);
+        const reminderDate = new Date(year, month - 1, day, hours, minutes);
+        
         todo.reminder = reminderDate.getTime();
         await saveData();
         renderTodos();
@@ -575,7 +580,11 @@ function scheduleNotification(todo) {
     const timeUntilReminder = todo.reminder - now;
     
     if (timeUntilReminder > 0) {
-        setTimeout(() => {
+        if (todo.notificationTimeout) {
+            clearTimeout(todo.notificationTimeout);
+        }
+        
+        todo.notificationTimeout = setTimeout(() => {
             if ('Notification' in window) {
                 if (Notification.permission === 'granted') {
                     new Notification('Task Reminder', {
