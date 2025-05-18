@@ -444,13 +444,6 @@ function createTodoElement(todo) {
     moveIcon.className = 'todo-button fas fa-folder move-icon me-2';
     moveIcon.addEventListener('click', () => prepareMoveTask(todo.id));
 
-    const deleteIcon = document.createElement('i');
-    deleteIcon.className = 'todo-button fas fa-trash delete-icon';
-    deleteIcon.addEventListener('click', () => {
-        currentDeletingTodoId = todo.id;
-        deleteTaskModal.show();
-    });
-
     const reminderIcon = document.createElement('i');
     reminderIcon.className = `todo-button fas ${todo.reminder ? 'fa-bell' : 'fa-bell-slash'} reminder-icon me-2`;
     reminderIcon.style.color = todo.reminder ? '#ff9800' : '';
@@ -473,9 +466,16 @@ function createTodoElement(todo) {
         reminderModal.show();
     });
 
+    const deleteIcon = document.createElement('i');
+    deleteIcon.className = 'todo-button fas fa-trash delete-icon';
+    deleteIcon.addEventListener('click', () => {
+        currentDeletingTodoId = todo.id;
+        deleteTaskModal.show();
+    });
+
     actionsDiv.appendChild(moveIcon);
-    actionsDiv.appendChild(deleteIcon);
     actionsDiv.appendChild(reminderIcon);
+    actionsDiv.appendChild(deleteIcon);
     todoEl.appendChild(actionsDiv);
 
     return todoEl;
