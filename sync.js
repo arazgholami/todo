@@ -15,7 +15,19 @@ class TodoSync {
         });
 
         // Initialize PeerJS
-        this.peer = new Peer();
+        this.peer = new Peer(null, {
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' }
+                ],
+                'sdpSemantics': 'unified-plan'
+            },
+            debug: 3
+        });
         
         this.peer.on('open', (id) => {
             console.log('My peer ID is:', id);
@@ -60,11 +72,26 @@ class TodoSync {
     }
 
     async joinRoom(roomId) {
-        this.isHost = false;
-        this.roomId = roomId;
-        
-        const conn = this.peer.connect(roomId);
-        this.handleConnection(conn);
+        try {
+            this.isHost = false;
+            this.roomId = roomId;
+            
+            console.log('Attempting to join room:', roomId);
+            const conn = this.peer.connect(roomId, {
+                reliable: true
+            });
+            
+            if (!conn) {
+                alert('Failed to create connection to room:', roomId);
+                return false;
+            }
+            
+            this.handleConnection(conn);
+            return true;
+        } catch (error) {
+            alert('Error joining room:', error);
+            return false;
+        }
     }
 
     async sendState(conn) {

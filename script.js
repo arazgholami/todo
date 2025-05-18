@@ -27,7 +27,7 @@ let currentDeletingTodoId = null;
 let currentDeletingCategoryId = null;
 let sidebarOpen = false;
 
-// Add notification sound
+
 const notificationSound = new Audio('bell.mp3');
 
 function toggleSidebar() {
@@ -57,7 +57,7 @@ async function loadData() {
 
 async function saveData() {
     await localforage.setItem('todoAppState', JSON.stringify(state));
-    // Broadcast changes to connected peers
+    
     if (window.todoSync) {
         window.todoSync.broadcastState();
     }
@@ -70,7 +70,7 @@ function generateId() {
 function renderCategories() {
     categoriesList.innerHTML = '';
 
-    // Sort categories by order
+    
     const sortedCategories = [...state.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
 
     sortedCategories.forEach(category => {
@@ -79,7 +79,7 @@ function renderCategories() {
         categoryEl.dataset.id = category.id;
         categoryEl.draggable = true;
 
-        // Add drag and drop event listeners
+        
         categoryEl.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', category.id);
             categoryEl.classList.add('dragging');
@@ -115,7 +115,7 @@ function renderCategories() {
                 const categoryElements = Array.from(container.children);
                 const newIndex = categoryElements.indexOf(categoryEl);
                 
-                // Update the order of all categories
+                
                 categoryElements.forEach((el, index) => {
                     const catId = el.dataset.id;
                     const cat = state.categories.find(c => c.id === catId);
@@ -221,7 +221,7 @@ async function saveCategoryEdit(categoryId, newName) {
 async function addCategory() {
     const categoryName = newCategoryInput.value.trim();
     if (categoryName) {
-        // Get the current highest order
+        
         const maxOrder = state.categories.length > 0 ? Math.max(...state.categories.map(c => c.order || 0)) : -1;
         
         const newCategory = {
@@ -267,7 +267,7 @@ async function addTodo() {
     const todoText = newTodoInput.value.trim();
     if (todoText) {
         const now = Date.now();
-        // Get the current highest order in the category
+        
         const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
         const maxOrder = categoryTodos.length > 0 ? Math.max(...categoryTodos.map(t => t.order || 0)) : -1;
         
@@ -433,11 +433,11 @@ function createTodoElement(todo) {
             const todoElements = Array.from(container.children);
             const newIndex = todoElements.indexOf(todoEl);
             
-            // Remove the dragged todo from its current position
+            
             const currentIndex = state.todos.indexOf(draggedTodo);
             state.todos.splice(currentIndex, 1);
             
-            // Find the correct insertion index in the full todos array
+            
             let insertIndex = 0;
             for (let i = 0; i < state.todos.length; i++) {
                 if (state.todos[i].categoryId === state.currentCategoryId) {
@@ -448,10 +448,10 @@ function createTodoElement(todo) {
                 }
             }
             
-            // Insert the todo at the new position
+            
             state.todos.splice(insertIndex, 0, draggedTodo);
             
-            // Update the order of all todos in the current category
+            
             const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
             categoryTodos.forEach((todo, index) => {
                 todo.order = index;
@@ -537,7 +537,7 @@ function createTodoElement(todo) {
     reminderIcon.title = todo.reminder ? 'Disable reminder' : 'Set reminder';
     reminderIcon.addEventListener('click', () => {
         if (todo.reminder) {
-            // If reminder exists, disable it
+            
             todo.reminder = null;
             if (todo.notificationTimeout) {
                 clearTimeout(todo.notificationTimeout);
@@ -546,7 +546,7 @@ function createTodoElement(todo) {
             saveData();
             renderTodos();
         } else {
-            // If no reminder, open modal to set one
+            
             currentReminderTodoId = todo.id;
             const reminderDate = document.getElementById('reminder-date');
             const reminderTime = document.getElementById('reminder-time');
@@ -592,7 +592,7 @@ function renderApp() {
     renderTodos();
 }
 
-// Add sync UI elements to the sidebar
+
 function addSyncUI() {
     const syncContainer = document.createElement('div');
     syncContainer.className = 'sync-container mt-4 p-3';
@@ -621,7 +621,7 @@ function addSyncUI() {
     
     document.querySelector('.sidebar').appendChild(syncContainer);
     
-    // Add event listeners
+    
     document.getElementById('createRoomBtn').addEventListener('click', async () => {
         const roomId = await window.todoSync.createRoom();
         document.getElementById('roomIdInput').value = roomId;
@@ -649,7 +649,7 @@ function addSyncUI() {
     });
 }
 
-// Add these new functions for reminder handling
+
 async function setReminder(todoId, date, time) {
     const todo = state.todos.find(t => t.id === todoId);
     if (todo) {
@@ -673,7 +673,7 @@ function scheduleNotification(todo) {
     if (reminderTime > now) {
         const timeUntilReminder = reminderTime - now;
         
-        // Clear any existing timeout for this todo
+        
         if (todo.notificationTimeout) {
             clearTimeout(todo.notificationTimeout);
         }
@@ -685,7 +685,7 @@ function scheduleNotification(todo) {
                     icon: 'todo.png'
                 });
 
-                // Play notification sound
+                
                 notificationSound.play().catch(error => {
                     console.error('Error playing notification sound:', error);
                 });
@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add sync UI
+    
     addSyncUI();
 
     confirmReminderBtn.addEventListener('click', () => {
@@ -799,12 +799,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Request notification permission on startup
+    
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
     }
     
-    // Schedule notifications for existing reminders
+    
     state.todos.forEach(todo => {
         if (todo.reminder) {
             scheduleNotification(todo);
