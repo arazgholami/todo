@@ -116,6 +116,12 @@ border: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: move;
+    transition: background-color 0.2s ease;
+}
+.category-item.dragging {
+    opacity: 0.5;
+    background: #444;
 }
 .category-item:hover {
     background: #444;

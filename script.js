@@ -1,6 +1,6 @@
 let state = {
     categories: [
-        { id: 'default', name: 'General', isDefault: true }
+        { id: 'default', name: 'General', isDefault: true, order: 0 }
     ],
     currentCategoryId: 'default',
     todos: [],
@@ -26,6 +26,9 @@ let currentReminderTodoId = null;
 let currentDeletingTodoId = null;
 let currentDeletingCategoryId = null;
 let sidebarOpen = false;
+
+// Add notification sound
+const notificationSound = new Audio('bell.mp3');
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -67,10 +70,64 @@ function generateId() {
 function renderCategories() {
     categoriesList.innerHTML = '';
 
-    state.categories.forEach(category => {
+    // Sort categories by order
+    const sortedCategories = [...state.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    sortedCategories.forEach(category => {
         const categoryEl = document.createElement('div');
         categoryEl.className = `category-item d-flex justify-content-between align-items-center ${state.currentCategoryId === category.id ? 'active' : ''}`;
         categoryEl.dataset.id = category.id;
+        categoryEl.draggable = true;
+
+        // Add drag and drop event listeners
+        categoryEl.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', category.id);
+            categoryEl.classList.add('dragging');
+        });
+
+        categoryEl.addEventListener('dragend', () => {
+            categoryEl.classList.remove('dragging');
+        });
+
+        categoryEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingEl = document.querySelector('.dragging');
+            if (draggingEl && draggingEl !== categoryEl) {
+                const rect = categoryEl.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY < midY) {
+                    categoryEl.parentNode.insertBefore(draggingEl, categoryEl);
+                } else {
+                    categoryEl.parentNode.insertBefore(draggingEl, categoryEl.nextSibling);
+                }
+            }
+        });
+
+        categoryEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const draggedCategory = state.categories.find(c => c.id === draggedId);
+            const targetCategory = state.categories.find(c => c.id === category.id);
+            
+            if (draggedCategory && targetCategory) {
+                const now = Date.now();
+                const container = categoryEl.parentNode;
+                const categoryElements = Array.from(container.children);
+                const newIndex = categoryElements.indexOf(categoryEl);
+                
+                // Update the order of all categories
+                categoryElements.forEach((el, index) => {
+                    const catId = el.dataset.id;
+                    const cat = state.categories.find(c => c.id === catId);
+                    if (cat) {
+                        cat.order = index;
+                    }
+                });
+                
+                saveData();
+                renderCategories();
+            }
+        });
 
         const nameInputContainer = document.createElement('div');
         nameInputContainer.className = 'flex-grow-1 me-2';
@@ -164,10 +221,14 @@ async function saveCategoryEdit(categoryId, newName) {
 async function addCategory() {
     const categoryName = newCategoryInput.value.trim();
     if (categoryName) {
+        // Get the current highest order
+        const maxOrder = state.categories.length > 0 ? Math.max(...state.categories.map(c => c.order || 0)) : -1;
+        
         const newCategory = {
             id: generateId(),
             name: categoryName,
-            isDefault: false
+            isDefault: false,
+            order: maxOrder + 1
         };
         state.categories.push(newCategory);
         newCategoryInput.value = '';
@@ -605,32 +666,34 @@ async function setReminder(todoId, date, time) {
 
 function scheduleNotification(todo) {
     if (!todo.reminder) return;
-    
-    const now = Date.now();
-    const timeUntilReminder = todo.reminder - now;
-    
-    if (timeUntilReminder > 0) {
+
+    const reminderTime = new Date(todo.reminder);
+    const now = new Date();
+
+    if (reminderTime > now) {
+        const timeUntilReminder = reminderTime - now;
+        
+        // Clear any existing timeout for this todo
         if (todo.notificationTimeout) {
             clearTimeout(todo.notificationTimeout);
         }
-        
+
         todo.notificationTimeout = setTimeout(() => {
-            if ('Notification' in window) {
-                if (Notification.permission === 'granted') {
-                    new Notification('Task Reminder', {
-                        body: todo.text,
-                        icon: './todo-icon.png'
-                    });
-                } else if (Notification.permission !== 'denied') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            new Notification('Task Reminder', {
-                                body: todo.text,
-                                icon: './todo-icon.png'
-                            });
-                        }
-                    });
-                }
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification('Task Reminder', {
+                    body: todo.text,
+                    icon: 'todo.png'
+                });
+
+                // Play notification sound
+                notificationSound.play().catch(error => {
+                    console.error('Error playing notification sound:', error);
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
             }
         }, timeUntilReminder);
     }
