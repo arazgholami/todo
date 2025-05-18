@@ -4,13 +4,15 @@ const ASSETS_TO_CACHE = [
   './index.html',
   './style.css',
   './script.js',
+  './sync.js',
   './todo-icon.png',
   './todo.png',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js',
+  'https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js'
 ];
 
 // Install event - cache assets
