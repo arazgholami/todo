@@ -1,6 +1,6 @@
 # ToDo
 
-A modern, feature-rich todo application built with HTML, CSS, and JavaScript. This application provides a clean and intuitive interface for managing your tasks efficiently.
+A server-less, modern, feature-rich todo application built with HTML, CSS, and JavaScript. This application provides a clean and intuitive interface for managing your tasks efficiently.
 <br>
 Live: [https://arazgholami.github.io/todo/](https://arazgholami.github.io/todo/)
 <br><br>
@@ -8,6 +8,7 @@ Live: [https://arazgholami.github.io/todo/](https://arazgholami.github.io/todo/)
 
 ## Features
 
+- **Serverless Sync and Reminder**: Sync your tasks between your devices and set reminder for each one of your task without a server
 - **Category Management**: Organize your tasks into custom categories with a default "General" category
 - **Task Organization**: 
   - Create, edit, and delete tasks
