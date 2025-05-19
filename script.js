@@ -27,6 +27,7 @@ let currentDeletingTodoId = null;
 let currentDeletingCategoryId = null;
 let sidebarOpen = false;
 
+
 const notificationSound = new Audio('bell.mp3');
 
 function toggleSidebar() {
@@ -68,6 +69,7 @@ function generateId() {
 
 function renderCategories() {
     categoriesList.innerHTML = '';
+
     
     const sortedCategories = [...state.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -76,6 +78,7 @@ function renderCategories() {
         categoryEl.className = `category-item d-flex justify-content-between align-items-center ${state.currentCategoryId === category.id ? 'active' : ''}`;
         categoryEl.dataset.id = category.id;
         categoryEl.draggable = true;
+
         
         categoryEl.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', category.id);
@@ -111,6 +114,7 @@ function renderCategories() {
                 const container = categoryEl.parentNode;
                 const categoryElements = Array.from(container.children);
                 const newIndex = categoryElements.indexOf(categoryEl);
+                
                 
                 categoryElements.forEach((el, index) => {
                     const catId = el.dataset.id;
@@ -192,6 +196,7 @@ function enableCategoryEdit(categoryId) {
     state.editingCategory = categoryId;
     renderCategories();
 
+
     const categoryInputs = document.querySelectorAll('.category-title-input');
     categoryInputs.forEach(input => {
         const categoryEl = input.closest('.category-item');
@@ -216,6 +221,7 @@ async function saveCategoryEdit(categoryId, newName) {
 async function addCategory() {
     const categoryName = newCategoryInput.value.trim();
     if (categoryName) {
+        
         const maxOrder = state.categories.length > 0 ? Math.max(...state.categories.map(c => c.order || 0)) : -1;
         
         const newCategory = {
@@ -250,24 +256,32 @@ async function confirmDeleteCategory() {
             }
         });
 
-        currentDeletingCategoryId = null;
         renderApp();
         await saveData();
+        deleteCategoryModal.hide();
+        currentDeletingCategoryId = null;
     }
 }
 
 async function addTodo() {
     const todoText = newTodoInput.value.trim();
     if (todoText) {
+        const now = Date.now();
+        
+        const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
+        const maxOrder = categoryTodos.length > 0 ? Math.max(...categoryTodos.map(t => t.order || 0)) : -1;
+        
         const newTodo = {
             id: generateId(),
             text: todoText,
             completed: false,
             categoryId: state.currentCategoryId,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
+            createdAt: now,
+            updatedAt: now,
+            order: maxOrder + 1
         };
-        state.todos.push(newTodo);
+
+        state.todos.unshift(newTodo);
         newTodoInput.value = '';
         renderTodos();
         await saveData();
@@ -277,8 +291,13 @@ async function addTodo() {
 async function toggleTodo(todoId) {
     const todo = state.todos.find(t => t.id === todoId);
     if (todo) {
+        const now = Date.now();
         todo.completed = !todo.completed;
-        todo.updatedAt = Date.now();
+        todo.updatedAt = now;
+
+        if (todo.completed) {
+            todo.completedAt = now;
+        }
         renderTodos();
         await saveData();
     }
@@ -293,6 +312,7 @@ async function deleteTodo(todoId) {
 function prepareMoveTask(todoId) {
     currentMovingTodoId = todoId;
 
+
     categorySelect.innerHTML = '';
     state.categories.forEach(category => {
         const option = document.createElement('option');
@@ -300,6 +320,7 @@ function prepareMoveTask(todoId) {
         option.textContent = category.name;
         categorySelect.appendChild(option);
     });
+
 
     moveTaskModal.show();
 }
@@ -310,7 +331,6 @@ async function confirmMoveTask() {
 
     if (todo && selectedCategoryId) {
         todo.categoryId = selectedCategoryId;
-        todo.updatedAt = Date.now();
         await saveData();
         renderTodos();
         moveTaskModal.hide();
@@ -318,25 +338,63 @@ async function confirmMoveTask() {
 }
 
 function renderTodos() {
-    activeItemsContainer.innerHTML = '';
-    completedItemsContainer.innerHTML = '';
+    const currentCategory = state.categories.find(c => c.id === state.currentCategoryId);
+    currentCategoryTitle.value = currentCategory ? currentCategory.name : 'General';
 
-    const currentTodos = state.todos.filter(todo => todo.categoryId === state.currentCategoryId);
-    const sortedTodos = [...currentTodos].sort((a, b) => b.createdAt - a.createdAt);
 
-    sortedTodos.forEach(todo => {
-        const todoEl = createTodoElement(todo);
-        if (todo.completed) {
-            completedItemsContainer.appendChild(todoEl);
-        } else {
-            activeItemsContainer.appendChild(todoEl);
+    currentCategoryTitle.readOnly = true;
+    currentCategoryTitle.ondblclick = function() {
+        this.readOnly = false;
+        this.focus();
+        this.select();
+    };
+    currentCategoryTitle.onblur = function() {
+        if (!this.readOnly) {
+            const newName = this.value.trim();
+            if (newName) {
+                const category = state.categories.find(c => c.id === state.currentCategoryId);
+                if (category) {
+                    category.name = newName;
+                    saveData();
+                    renderCategories();
+                }
+            }
+            this.readOnly = true;
         }
+    };
+    currentCategoryTitle.onkeypress = function(e) {
+        if (e.key === 'Enter') {
+            this.blur();
+        }
+    };
+
+
+    let filteredTodos = state.todos.filter(todo => todo.categoryId === state.currentCategoryId);
+
+
+    const activeTodos = filteredTodos.filter(todo => !todo.completed)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const completedTodos = filteredTodos.filter(todo => todo.completed)
+        .sort((a, b) => b.completedAt - a.completedAt);
+
+
+    activeItemsContainer.innerHTML = '';
+    activeTodos.forEach(todo => {
+        activeItemsContainer.appendChild(createTodoElement(todo));
+    });
+
+
+    completedItemsContainer.innerHTML = '';
+    completedTodos.forEach(todo => {
+        completedItemsContainer.appendChild(createTodoElement(todo));
     });
 }
 
 function createTodoElement(todo) {
     const todoEl = document.createElement('div');
     todoEl.className = `todo-item ${todo.completed ? 'completed' : ''} ${state.editingTodo === todo.id ? 'editing' : ''}`;
+    todoEl.dataset.id = todo.id;
     todoEl.draggable = true;
 
     todoEl.addEventListener('dragstart', (e) => {
@@ -348,47 +406,126 @@ function createTodoElement(todo) {
         todoEl.classList.remove('dragging');
     });
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'todo-content';
+    todoEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingEl = document.querySelector('.dragging');
+        if (draggingEl !== todoEl) {
+            const rect = todoEl.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            const container = todoEl.parentNode;
+            if (e.clientY < midY) {
+                container.insertBefore(draggingEl, todoEl);
+            } else {
+                container.insertBefore(draggingEl, todoEl.nextSibling);
+            }
+        }
+    });
+
+    todoEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const draggedId = e.dataTransfer.getData('text/plain');
+        const draggedTodo = state.todos.find(t => t.id === draggedId);
+        const targetTodo = state.todos.find(t => t.id === todo.id);
+        
+        if (draggedTodo && targetTodo) {
+            const now = Date.now();
+            const container = todoEl.parentNode;
+            const todoElements = Array.from(container.children);
+            const newIndex = todoElements.indexOf(todoEl);
+            
+            
+            const currentIndex = state.todos.indexOf(draggedTodo);
+            state.todos.splice(currentIndex, 1);
+            
+            
+            let insertIndex = 0;
+            for (let i = 0; i < state.todos.length; i++) {
+                if (state.todos[i].categoryId === state.currentCategoryId) {
+                    if (insertIndex === newIndex) {
+                        break;
+                    }
+                    insertIndex++;
+                }
+            }
+            
+            
+            state.todos.splice(insertIndex, 0, draggedTodo);
+            
+            
+            const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
+            categoryTodos.forEach((todo, index) => {
+                todo.order = index;
+                todo.updatedAt = now;
+            });
+            
+            saveData();
+            renderTodos();
+        }
+    });
+
+    const todoContent = document.createElement('div');
+    todoContent.className = 'todo-content';
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
+    checkbox.className = 'form-check-input me-2';
     checkbox.checked = todo.completed;
     checkbox.addEventListener('change', () => toggleTodo(todo.id));
 
-    const textDiv = document.createElement('div');
-    textDiv.className = 'todo-text';
-
+    const todoText = document.createElement(state.editingTodo === todo.id ? 'input' : 'span');
     if (state.editingTodo === todo.id) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = todo.text;
-        input.addEventListener('keypress', (e) => {
+        todoText.type = 'text';
+        todoText.className = 'form-control';
+        todoText.value = todo.text;
+        todoText.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                saveEditTodoInline(todo.id, input.value);
+                saveEditTodoInline(todo.id, todoText.value);
             }
         });
-        input.addEventListener('blur', () => {
-            saveEditTodoInline(todo.id, input.value);
+        todoText.addEventListener('blur', () => {
+            saveEditTodoInline(todo.id, todoText.value);
         });
-        input.focus();
-        textDiv.appendChild(input);
+        todoText.focus();
     } else {
-        const text = document.createElement('p');
-        text.textContent = todo.text;
-        text.addEventListener('dblclick', () => {
+        todoText.className = 'todo-text';
+        todoText.textContent = todo.text;
+        todoText.style.cursor = 'pointer';
+        todoText.addEventListener('click', () => toggleTodo(todo.id));
+        todoText.addEventListener('dblclick', () => {
             state.editingTodo = todo.id;
             renderTodos();
         });
-        textDiv.appendChild(text);
     }
 
-    contentDiv.appendChild(checkbox);
-    contentDiv.appendChild(textDiv);
-    todoEl.appendChild(contentDiv);
+    todoContent.appendChild(checkbox);
+    todoContent.appendChild(todoText);
+    todoEl.appendChild(todoContent);
 
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'actions-div';
+
+    const moveHandle = document.createElement('i');
+    moveHandle.className = 'todo-button fas fa-bars move-handle me-2';
+    moveHandle.style.cursor = 'grab';
+    moveHandle.title = 'Drag to reorder';
+    actionsDiv.appendChild(moveHandle);
+
+    if (state.editingTodo === todo.id) {
+        const saveIcon = document.createElement('i');
+        saveIcon.className = 'todo-button fas fa-save save-icon me-2';
+        saveIcon.addEventListener('click', () => {
+            saveEditTodoInline(todo.id, todoText.value);
+        });
+        actionsDiv.appendChild(saveIcon);
+    } else {
+        const editIcon = document.createElement('i');
+        editIcon.className = 'todo-button fas fa-edit edit-icon me-2';
+        editIcon.addEventListener('click', () => {
+            state.editingTodo = todo.id;
+            renderTodos();
+        });
+        actionsDiv.appendChild(editIcon);
+    }
 
     const moveIcon = document.createElement('i');
     moveIcon.className = 'todo-button fas fa-folder move-icon me-2';
@@ -400,6 +537,7 @@ function createTodoElement(todo) {
     reminderIcon.title = todo.reminder ? 'Disable reminder' : 'Set reminder';
     reminderIcon.addEventListener('click', () => {
         if (todo.reminder) {
+            
             todo.reminder = null;
             if (todo.notificationTimeout) {
                 clearTimeout(todo.notificationTimeout);
@@ -408,6 +546,7 @@ function createTodoElement(todo) {
             saveData();
             renderTodos();
         } else {
+            
             currentReminderTodoId = todo.id;
             const reminderDate = document.getElementById('reminder-date');
             const reminderTime = document.getElementById('reminder-time');
@@ -438,7 +577,6 @@ async function saveEditTodoInline(todoId, newText) {
         const todo = state.todos.find(t => t.id === todoId);
         if (todo) {
             todo.text = newText.trim();
-            todo.updatedAt = Date.now();
             state.editingTodo = null;
             renderTodos();
             await saveData();
@@ -452,97 +590,107 @@ async function saveEditTodoInline(todoId, newText) {
 function renderApp() {
     renderCategories();
     renderTodos();
-    const currentCategory = state.categories.find(c => c.id === state.currentCategoryId);
-    if (currentCategory) {
-        currentCategoryTitle.value = currentCategory.name;
-    }
 }
+
 
 function addSyncUI() {
     const syncContainer = document.createElement('div');
-    syncContainer.className = 'sync-container';
+    syncContainer.className = 'sync-container mt-4 p-3';
     syncContainer.innerHTML = `
-        <h6>Sync</h6>
-        <div id="roomInfo" style="display: none;">
-            <div class="input-group">
-                <input type="text" class="form-control" id="roomId" readonly>
-                <button class="btn btn-outline-secondary" id="copyRoomBtn">
+        <h6 class="mb-3">Sync</h6>
+        <div class="d-flex gap-2 mb-2">
+            <button class="btn btn-primary btn-sm" id="createRoomBtn">Create Space</button>
+            <button class="btn btn-outline-primary btn-sm" id="joinRoomBtn">Join Space</button>
+        </div>
+        <div id="roomInfo" class="d-none">
+            <div class="input-group mb-2">
+                <input type="text" class="form-control form-control-sm" id="roomIdInput" readonly>
+                <button class="btn btn-outline-secondary btn-sm" id="copyRoomIdBtn">
                     <i class="fas fa-copy"></i>
                 </button>
             </div>
-            <div class="text-muted">Share this ID with others to sync</div>
-            <div id="connectionStatus">
-                <span class="badge bg-secondary">No connections</span>
+            <div id="connectionStatus" class="mt-2 small">
+                <span class="badge bg-secondary">Disconnected</span>
             </div>
         </div>
-        <div id="joinRoomForm">
-            <div class="input-group">
-                <input type="text" class="form-control" id="joinRoomId" placeholder="Enter room ID">
-                <button class="btn btn-outline-secondary" id="joinRoomBtn">
-                    <i class="fas fa-sign-in-alt"></i>
-                </button>
+        <div id="joinRoomForm" class="d-none">
+            <div class="input-group mb-2">
+                <input type="text" class="form-control form-control-sm" id="joinRoomIdInput" placeholder="Enter Space ID">
+                <button class="btn btn-primary btn-sm" id="confirmJoinBtn">Join</button>
             </div>
-            <div id="joinConnectionStatus">
-                <span class="badge bg-secondary">Not connected</span>
+            <div id="joinConnectionStatus" class="mt-2 small">
+                <span class="badge bg-secondary">Disconnected</span>
             </div>
         </div>
-        <button class="btn btn-primary" id="createRoomBtn">Create Room</button>
     `;
-
-    document.querySelector('.footer').appendChild(syncContainer);
-
-    const roomInfo = document.getElementById('roomInfo');
-    const joinRoomForm = document.getElementById('joinRoomForm');
-    const roomId = document.getElementById('roomId');
-    const joinRoomId = document.getElementById('joinRoomId');
-    const createRoomBtn = document.getElementById('createRoomBtn');
-    const joinRoomBtn = document.getElementById('joinRoomBtn');
-    const copyRoomBtn = document.getElementById('copyRoomBtn');
-    const connectionStatus = document.getElementById('connectionStatus');
-    const joinConnectionStatus = document.getElementById('joinConnectionStatus');
-
-    createRoomBtn.addEventListener('click', async () => {
-        const id = await window.todoSync.createRoom();
-        roomId.value = id;
-        roomInfo.style.display = 'block';
-        joinRoomForm.style.display = 'none';
-        createRoomBtn.style.display = 'none';
+    
+    document.querySelector('.sidebar').appendChild(syncContainer);
+    
+    
+    document.getElementById('createRoomBtn').addEventListener('click', async () => {
+        const roomId = await window.todoSync.createRoom();
+        document.getElementById('roomIdInput').value = roomId;
+        document.getElementById('roomInfo').classList.remove('d-none');
+        document.getElementById('joinRoomForm').classList.add('d-none');
     });
-
-    joinRoomBtn.addEventListener('click', async () => {
-        const id = joinRoomId.value.trim();
-        if (id) {
-            const success = await window.todoSync.joinRoom(id);
-            if (success) {
-                joinRoomForm.style.display = 'none';
-                createRoomBtn.style.display = 'none';
-                joinConnectionStatus.innerHTML = '<span class="badge bg-success">Connected</span>';
-            } else {
-                joinConnectionStatus.innerHTML = '<span class="badge bg-danger">Connection failed</span>';
-            }
+    
+    document.getElementById('joinRoomBtn').addEventListener('click', () => {
+        document.getElementById('joinRoomForm').classList.remove('d-none');
+        document.getElementById('roomInfo').classList.add('d-none');
+    });
+    
+    document.getElementById('copyRoomIdBtn').addEventListener('click', () => {
+        const roomIdInput = document.getElementById('roomIdInput');
+        roomIdInput.select();
+        document.execCommand('copy');
+    });
+    
+    document.getElementById('confirmJoinBtn').addEventListener('click', async () => {
+        const roomId = document.getElementById('joinRoomIdInput').value.trim();
+        if (roomId) {
+            await window.todoSync.joinRoom(roomId);
+            document.getElementById('joinRoomForm').classList.add('d-none');
         }
     });
 
-    copyRoomBtn.addEventListener('click', () => {
-        roomId.select();
-        document.execCommand('copy');
-    });
-
-    window.todoSync.peer.on('connection', () => {
-        connectionStatus.innerHTML = '<span class="badge bg-success">Connected</span>';
-    });
-
-    window.todoSync.peer.on('disconnected', () => {
-        connectionStatus.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
-    });
+    // Add connection status monitoring
+    if (window.todoSync) {
+        window.todoSync.peer.on('connection', (conn) => {
+            const statusElement = document.getElementById('connectionStatus');
+            const joinStatusElement = document.getElementById('joinConnectionStatus');
+            
+            conn.on('open', () => {
+                if (statusElement) statusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
+                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
+            });
+            
+            conn.on('close', () => {
+                if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+            });
+            
+            conn.on('iceStateChange', (state) => {
+                if (state === 'checking') {
+                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
+                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
+                } else if (state === 'failed') {
+                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
+                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
+                }
+            });
+        });
+    }
 }
+
 
 async function setReminder(todoId, date, time) {
     const todo = state.todos.find(t => t.id === todoId);
     if (todo) {
-        const reminderDate = new Date(`${date}T${time}`);
+        const [year, month, day] = date.split('-').map(Number);
+        const [hours, minutes] = time.split(':').map(Number);
+        const reminderDate = new Date(year, month - 1, day, hours, minutes);
+        
         todo.reminder = reminderDate.getTime();
-        todo.updatedAt = Date.now();
         await saveData();
         renderTodos();
         scheduleNotification(todo);
@@ -550,29 +698,42 @@ async function setReminder(todoId, date, time) {
 }
 
 function scheduleNotification(todo) {
-    if (todo.reminder) {
-        const now = Date.now();
-        const timeUntilReminder = todo.reminder - now;
+    if (!todo.reminder) return;
 
-        if (timeUntilReminder > 0) {
-            if (todo.notificationTimeout) {
-                clearTimeout(todo.notificationTimeout);
-            }
+    const reminderTime = new Date(todo.reminder);
+    const now = new Date();
 
-            todo.notificationTimeout = setTimeout(() => {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('Todo Reminder', {
-                        body: todo.text,
-                        icon: 'todo-icon.png'
-                    });
-                    notificationSound.play();
-                }
-            }, timeUntilReminder);
+    if (reminderTime > now) {
+        const timeUntilReminder = reminderTime - now;
+        
+        
+        if (todo.notificationTimeout) {
+            clearTimeout(todo.notificationTimeout);
         }
+
+        todo.notificationTimeout = setTimeout(() => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification('Task Reminder', {
+                    body: todo.text,
+                    icon: 'todo.png'
+                });
+
+                
+                notificationSound.play().catch(error => {
+                    console.error('Error playing notification sound:', error);
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+            }
+        }, timeUntilReminder);
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+
     categoriesList = document.getElementById('categories-list');
     newCategoryInput = document.getElementById('new-category-input');
     addCategoryBtn = document.getElementById('add-category-btn');
@@ -588,12 +749,15 @@ document.addEventListener('DOMContentLoaded', function() {
     reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
     confirmReminderBtn = document.getElementById('confirm-reminder-btn');
 
+
     loadData();
+
 
     const saveTaskBtn = document.getElementById('save-task-btn');
     if (saveTaskBtn) {
         saveTaskBtn.addEventListener('click', addTodo);
     }
+
 
     if (addCategoryBtn) {
         addCategoryBtn.addEventListener('click', addCategory);
@@ -606,6 +770,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
     if (newTodoInput) {
         newTodoInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -614,9 +779,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
     if (confirmMoveBtn) {
         confirmMoveBtn.addEventListener('click', confirmMoveTask);
     }
+
 
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     if (confirmDeleteBtn) {
@@ -629,15 +796,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
     const confirmDeleteCategoryBtn = document.getElementById('confirm-delete-category-btn');
     if (confirmDeleteCategoryBtn) {
         confirmDeleteCategoryBtn.addEventListener('click', confirmDeleteCategory);
     }
 
+
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', toggleSidebar);
     }
+
 
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 768 && sidebarOpen) {
@@ -648,6 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
     
     addSyncUI();
 
@@ -661,9 +832,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
     }
+    
     
     state.todos.forEach(todo => {
         if (todo.reminder) {
