@@ -609,7 +609,6 @@ function addSyncUI() {
                     <i class="fas fa-copy"></i>
                 </button>
             </div>
-            <div class="text-muted small">Share this ID</div>
             <div id="connectionStatus" class="mt-2 small">
                 <span class="badge bg-secondary">Disconnected</span>
             </div>
