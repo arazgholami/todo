@@ -610,11 +610,17 @@ function addSyncUI() {
                 </button>
             </div>
             <div class="text-muted small">Share this ID</div>
+            <div id="connectionStatus" class="mt-2 small">
+                <span class="badge bg-secondary">Disconnected</span>
+            </div>
         </div>
         <div id="joinRoomForm" class="d-none">
             <div class="input-group mb-2">
                 <input type="text" class="form-control form-control-sm" id="joinRoomIdInput" placeholder="Enter Space ID">
                 <button class="btn btn-primary btn-sm" id="confirmJoinBtn">Join</button>
+            </div>
+            <div id="joinConnectionStatus" class="mt-2 small">
+                <span class="badge bg-secondary">Disconnected</span>
             </div>
         </div>
     `;
@@ -647,6 +653,34 @@ function addSyncUI() {
             document.getElementById('joinRoomForm').classList.add('d-none');
         }
     });
+
+    // Add connection status monitoring
+    if (window.todoSync) {
+        window.todoSync.peer.on('connection', (conn) => {
+            const statusElement = document.getElementById('connectionStatus');
+            const joinStatusElement = document.getElementById('joinConnectionStatus');
+            
+            conn.on('open', () => {
+                if (statusElement) statusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
+                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
+            });
+            
+            conn.on('close', () => {
+                if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+            });
+            
+            conn.on('iceStateChange', (state) => {
+                if (state === 'checking') {
+                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
+                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
+                } else if (state === 'failed') {
+                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
+                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
+                }
+            });
+        });
+    }
 }
 
 

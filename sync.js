@@ -22,9 +22,18 @@ class TodoSync {
                     { urls: 'stun:stun1.l.google.com:19302' },
                     { urls: 'stun:stun2.l.google.com:19302' },
                     { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' }
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:stun.ekiga.net' },
+                    { urls: 'stun:stun.ideasip.com' },
+                    { urls: 'stun:stun.schlund.de' },
+                    { urls: 'stun:stun.stunprotocol.org:3478' },
+                    { urls: 'stun:stun.voiparound.com' },
+                    { urls: 'stun:stun.voipbuster.com' },
+                    { urls: 'stun:stun.voipstunt.com' },
+                    { urls: 'stun:stun.voxgratia.org' }
                 ],
-                'sdpSemantics': 'unified-plan'
+                'sdpSemantics': 'unified-plan',
+                'iceCandidatePoolSize': 10
             },
             debug: 3
         });
@@ -36,6 +45,24 @@ class TodoSync {
 
         this.peer.on('error', (err) => {
             console.error('PeerJS error:', err);
+            if (err.type === 'peer-unavailable') {
+                console.error('Peer is unavailable. Please check if the peer ID is correct and the peer is online.');
+            } else if (err.type === 'network') {
+                console.error('Network error. Please check your internet connection.');
+            } else if (err.type === 'webrtc') {
+                console.error('WebRTC error. This might be due to browser compatibility or network restrictions.');
+            }
+        });
+
+        this.peer.on('connection', (conn) => {
+            conn.on('iceStateChange', (state) => {
+                console.log('ICE connection state:', state);
+                if (state === 'failed') {
+                    console.error('ICE connection failed. Attempting to reconnect...');
+                    this.reconnect(conn.peer);
+                }
+            });
+            this.handleConnection(conn);
         });
     }
 
@@ -204,6 +231,27 @@ class TodoSync {
             }
         } catch (error) {
             console.error('Error broadcasting state:', error);
+        }
+    }
+
+    async reconnect(peerId) {
+        try {
+            console.log('Attempting to reconnect to peer:', peerId);
+            const conn = this.peer.connect(peerId, {
+                reliable: true,
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+            
+            if (conn) {
+                this.handleConnection(conn);
+            }
+        } catch (error) {
+            console.error('Reconnection failed:', error);
         }
     }
 }
