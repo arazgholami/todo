@@ -8,13 +8,11 @@ class TodoSync {
     }
 
     async initialize() {
-        // Initialize LocalForage
         localforage.config({
             name: 'todo-app',
             storeName: 'todos'
         });
 
-        // Initialize PeerJS
         this.peer = new Peer(null, {
             config: {
                 'iceServers': [
@@ -77,8 +75,6 @@ class TodoSync {
         conn.on('open', () => {
             console.log('Connection opened with:', conn.peer);
             this.connections.set(conn.peer, conn);
-            
-            // Send current state to the new peer
             this.sendState(conn);
         });
 
@@ -127,7 +123,6 @@ class TodoSync {
         try {
             const state = await localforage.getItem('todoAppState');
             if (state) {
-                // Send the state as is, since it's already a string
                 conn.send({
                     type: 'sync',
                     data: state
@@ -148,17 +143,13 @@ class TodoSync {
                 const currentState = await localforage.getItem('todoAppState');
                 const newState = data.data;
                 
-                // Parse both states if they're strings
                 const parsedCurrentState = typeof currentState === 'string' ? JSON.parse(currentState) : currentState;
                 const parsedNewState = typeof newState === 'string' ? JSON.parse(newState) : newState;
                 
-                // Merge states, preferring newer items
                 const mergedState = this.mergeStates(parsedCurrentState, parsedNewState);
                 
-                // Save merged state as string
                 await localforage.setItem('todoAppState', JSON.stringify(mergedState));
                 
-                // Trigger UI update
                 if (typeof window.loadData === 'function') {
                     await window.loadData();
                 }
@@ -186,31 +177,25 @@ class TodoSync {
     mergeTodos(currentTodos, newTodos) {
         const todoMap = new Map();
         
-        // First, add all current todos to map
         currentTodos.forEach(todo => {
             todoMap.set(todo.id, todo);
         });
         
-        // Then merge in new todos, preserving order
         newTodos.forEach(todo => {
             const existing = todoMap.get(todo.id);
             if (!existing) {
-                // If it's a new todo, add it
                 todoMap.set(todo.id, todo);
             } else if (todo.updatedAt > existing.updatedAt) {
-                // If the new version is more recent, update it
                 todoMap.set(todo.id, todo);
             }
         });
 
-        // Convert back to array and sort by createdAt
         return Array.from(todoMap.values()).sort((a, b) => b.createdAt - a.createdAt);
     }
 
     mergeCategories(currentCategories, newCategories) {
         const categoryMap = new Map();
         
-        // Add all categories to map
         [...currentCategories, ...newCategories].forEach(category => {
             const existing = categoryMap.get(category.id);
             if (!existing || category.name !== 'General') {
@@ -256,9 +241,7 @@ class TodoSync {
     }
 }
 
-// Initialize sync
 const todoSync = new TodoSync();
 todoSync.initialize();
 
-// Export for use in script.js
 window.todoSync = todoSync; 

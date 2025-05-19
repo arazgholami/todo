@@ -345,190 +345,166 @@ background: #666;
 
 /* Remove outlines globally */
 * {
-    outline: none !important;
+    box-sizing: border-box;
+    outline: none;
 }
 
 *:focus {
-    outline: none !important;
-    box-shadow: none !important;
+    outline: none;
 }
 
 .form-control:focus,
-.btn:focus,
-.btn:active,
-.btn:hover,
-.form-select:focus,
-.input-group-text:focus {
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: inherit !important;
+.form-select:focus {
+    box-shadow: none;
+    border-color: #ddd;
 }
 
 .logo-wrapper {
-    color: white;
+    text-decoration: none;
 }
+
 .logo-wrapper:hover {
-    color: white;
+    text-decoration: none;
 }
 
 .todo-item.dragging {
     opacity: 0.5;
-    background: #f8f8f8;
-    border: 2px dashed #ccc;
+    background: #f5f5f5;
 }
 
 .move-handle {
-    color: #999;
     cursor: grab;
 }
 
 .move-handle:hover {
-    color: #666;
+    color: #333;
 }
 
 .todo-item:hover .move-handle {
-    color: #666;
+    display: inline-block;
 }
 
 /* Sync UI Styles */
 .sync-container {
-    border-top: 1px solid var(--border-color);
-    background-color: var(--bg-color);
+    padding: 10px;
+    background: #333;
+    color: #fff;
 }
 
 .sync-container h6 {
-    color: var(--text-color);
-    font-weight: 600;
+    margin-bottom: 10px;
+    color: #fff;
 }
 
 .sync-container .btn {
-    font-size: 0.875rem;
+    background: #555 !important;
 }
 
 .sync-container .input-group {
-    max-width: 100%;
+    margin-bottom: 10px;
 }
 
 .sync-container .form-control {
-    font-size: 0.875rem;
-    background-color: var(--input-bg);
-    border-color: var(--border-color);
-    color: var(--text-color);
+    background: #444;
+    color: #fff;
+    border: none;
 }
 
 .sync-container .form-control:focus {
-    background-color: var(--input-bg);
-    border-color: var(--primary-color);
-    color: var(--text-color);
-    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+    background: #555;
+    color: #fff;
+    box-shadow: none;
 }
 
 .sync-container .text-muted {
-    color: var(--text-muted) !important;
+    color: #aaa !important;
 }
 
 /* Room Info and Join Section Styles */
 #roomInfo, #joinRoomForm {
-    background-color: #313131;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 15px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #444;
+    border-radius: 5px;
 }
 
 #roomInfo .input-group, #joinRoomForm .input-group {
-    background-color: #fff;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 5px;
 }
 
 #roomInfo .form-control, #joinRoomForm .form-control {
-    border: 1px solid #e9ecef;
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    color: #495057;
-    background-color: #fff;
+    background: #555;
+    color: #fff;
+    border: none;
 }
 
 #roomInfo .form-control:focus, #joinRoomForm .form-control:focus {
-    border-color: #ced4da;
-    box-shadow: none;
+    background: #666;
+    color: #fff;
 }
 
 #roomInfo .btn-outline-secondary {
-    border: 1px solid #e9ecef;
-    color: #6c757d;
-    background-color: #f8f9fa;
-    padding: 8px 12px;
-    transition: all 0.2s ease;
+    background: #555 !important;
+    color: #fff !important;
+    border: none !important;
 }
 
 #roomInfo .btn-outline-secondary:hover {
-    background-color: #e9ecef;
-    color: #495057;
-    border-color: #dee2e6;
+    background: #666 !important;
 }
 
 #createRoomBtn {
-    background-color: #343a40 !important;
+    background: #555 !important;
     color: #fff !important;
     border: none !important;
-    transition: all 0.2s ease;
 }
 
 #createRoomBtn:hover {
-    background-color: #23272b !important;
+    background: #666 !important;
 }
 
 #joinRoomBtn {
-    background-color: #343a40 !important;
+    background: #555 !important;
     color: #fff !important;
     border: none !important;
-    transition: all 0.2s ease;
 }
 
 #joinRoomBtn:hover {
-    background-color: #23272b !important;
+    background: #666 !important;
 }
 
 #confirmJoinBtn {
-    background-color: #343a40 !important;
+    background: #555 !important;
     color: #fff !important;
     border: none !important;
-    transition: all 0.2s ease;
 }
 
 #confirmJoinBtn:hover {
-    background-color: #23272b !important;
+    background: #666 !important;
 }
 
 #connectionStatus, #joinConnectionStatus {
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin-top: 5px;
+    font-size: 0.9em;
 }
 
 #connectionStatus .badge, #joinConnectionStatus .badge {
-    padding: 6px 10px;
-    font-weight: 500;
-    font-size: 0.8rem;
-    border-radius: 4px;
+    font-size: 0.8em;
+    padding: 5px 10px;
 }
 
 #connectionStatus .badge.bg-secondary, #joinConnectionStatus .badge.bg-secondary {
-    background-color: #6c757d !important;
+    background: #666 !important;
 }
 
 #connectionStatus .badge.bg-success, #joinConnectionStatus .badge.bg-success {
-    background-color: #28a745 !important;
+    background: #28a745 !important;
 }
 
 #connectionStatus .badge.bg-danger, #joinConnectionStatus .badge.bg-danger {
-    background-color: #dc3545 !important;
+    background: #dc3545 !important;
 }
 
 #connectionStatus .badge.bg-warning, #joinConnectionStatus .badge.bg-warning {
-    background-color: #ffc107 !important;
-    color: #212529;
+    background: #ffc107 !important;
 }
