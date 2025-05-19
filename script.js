@@ -64,7 +64,7 @@ async function saveData() {
 }
 
 function generateId() {
-    return uuid.v4();
+    return crypto.randomUUID();
 }
 
 function renderCategories() {
