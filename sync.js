@@ -13,27 +13,17 @@ class TodoSync {
             storeName: 'todos'
         });
 
+        // Fetch TURN server credentials
+        const response = await fetch("https://todo.metered.live/api/v1/turn/credentials?apiKey=fce152139d6e90ad8be6deaa71200beca71a");
+        const iceServers = await response.json();
+
         this.peer = new Peer(null, {
             config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:stun.ekiga.net' },
-                    { urls: 'stun:stun.ideasip.com' },
-                    { urls: 'stun:stun.schlund.de' },
-                    { urls: 'stun:stun.stunprotocol.org:3478' },
-                    { urls: 'stun:stun.voiparound.com' },
-                    { urls: 'stun:stun.voipbuster.com' },
-                    { urls: 'stun:stun.voipstunt.com' },
-                    { urls: 'stun:stun.voxgratia.org' }
-                ],
+                'iceServers': iceServers,
                 'sdpSemantics': 'unified-plan',
                 'iceCandidatePoolSize': 10
             },
-            debug: 3
+            debug: 3 // Keep debug level high for testing
         });
         
         this.peer.on('open', (id) => {
@@ -113,6 +103,7 @@ class TodoSync {
             return true;
         } catch (error) {
             alert('Error joining room:', error);
+            console.log(error);
             return false;
         }
     }
