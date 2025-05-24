@@ -2,8 +2,8 @@ class TodoSync {
     constructor() {
         this.peer = null;
         this.connections = new Map();
-        this.roomId = null;
-        this.isHost = false;
+        this.roomId = localStorage.getItem('todoRoomId');
+        this.isHost = localStorage.getItem('todoIsHost') === 'true';
         this.syncInProgress = false;
     }
 
@@ -26,9 +26,21 @@ class TodoSync {
             debug: 3 // Keep debug level high for testing
         });
         
-        this.peer.on('open', (id) => {
+        this.peer.on('open', async (id) => {
             console.log('My peer ID is:', id);
             this.setupConnectionHandlers();
+            
+            // Restore previous connection if exists
+            if (this.roomId) {
+                if (this.isHost) {
+                    // If we were the host, we need to wait for connections
+                    console.log('Restoring host connection for room:', this.roomId);
+                } else {
+                    // If we were a client, we need to reconnect
+                    console.log('Restoring client connection to room:', this.roomId);
+                    await this.joinRoom(this.roomId);
+                }
+            }
         });
 
         this.peer.on('error', (err) => {
@@ -81,6 +93,8 @@ class TodoSync {
     async createRoom() {
         this.isHost = true;
         this.roomId = this.peer.id;
+        localStorage.setItem('todoRoomId', this.roomId);
+        localStorage.setItem('todoIsHost', 'true');
         return this.roomId;
     }
 
@@ -88,6 +102,8 @@ class TodoSync {
         try {
             this.isHost = false;
             this.roomId = roomId;
+            localStorage.setItem('todoRoomId', roomId);
+            localStorage.setItem('todoIsHost', 'false');
             
             console.log('Attempting to join room:', roomId);
             const conn = this.peer.connect(roomId, {

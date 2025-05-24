@@ -393,139 +393,22 @@ function renderTodos() {
 
 function createTodoElement(todo) {
     const todoEl = document.createElement('div');
-    todoEl.className = `todo-item ${todo.completed ? 'completed' : ''} ${state.editingTodo === todo.id ? 'editing' : ''}`;
-    todoEl.dataset.id = todo.id;
+    todoEl.className = `todo-item ${todo.completed ? 'completed' : ''}`;
     todoEl.draggable = true;
-
-    todoEl.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', todo.id);
-        todoEl.classList.add('dragging');
-    });
-
-    todoEl.addEventListener('dragend', () => {
-        todoEl.classList.remove('dragging');
-    });
-
-    todoEl.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const draggingEl = document.querySelector('.dragging');
-        if (draggingEl !== todoEl) {
-            const rect = todoEl.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            const container = todoEl.parentNode;
-            if (e.clientY < midY) {
-                container.insertBefore(draggingEl, todoEl);
-            } else {
-                container.insertBefore(draggingEl, todoEl.nextSibling);
-            }
-        }
-    });
-
-    todoEl.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const draggedId = e.dataTransfer.getData('text/plain');
-        const draggedTodo = state.todos.find(t => t.id === draggedId);
-        const targetTodo = state.todos.find(t => t.id === todo.id);
-        
-        if (draggedTodo && targetTodo) {
-            const now = Date.now();
-            const container = todoEl.parentNode;
-            const todoElements = Array.from(container.children);
-            const newIndex = todoElements.indexOf(todoEl);
-            
-            
-            const currentIndex = state.todos.indexOf(draggedTodo);
-            state.todos.splice(currentIndex, 1);
-            
-            
-            let insertIndex = 0;
-            for (let i = 0; i < state.todos.length; i++) {
-                if (state.todos[i].categoryId === state.currentCategoryId) {
-                    if (insertIndex === newIndex) {
-                        break;
-                    }
-                    insertIndex++;
-                }
-            }
-            
-            
-            state.todos.splice(insertIndex, 0, draggedTodo);
-            
-            
-            const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
-            categoryTodos.forEach((todo, index) => {
-                todo.order = index;
-                todo.updatedAt = now;
-            });
-            
-            saveData();
-            renderTodos();
-        }
-    });
-
-    const todoContent = document.createElement('div');
-    todoContent.className = 'todo-content';
+    todoEl.dataset.id = todo.id;
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'form-check-input me-2';
+    checkbox.className = 'todo-checkbox';
     checkbox.checked = todo.completed;
     checkbox.addEventListener('change', () => toggleTodo(todo.id));
 
-    const todoText = document.createElement(state.editingTodo === todo.id ? 'input' : 'span');
-    if (state.editingTodo === todo.id) {
-        todoText.type = 'text';
-        todoText.className = 'form-control';
-        todoText.value = todo.text;
-        todoText.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                saveEditTodoInline(todo.id, todoText.value);
-            }
-        });
-        todoText.addEventListener('blur', () => {
-            saveEditTodoInline(todo.id, todoText.value);
-        });
-        todoText.focus();
-    } else {
-        todoText.className = 'todo-text';
-        todoText.textContent = todo.text;
-        todoText.style.cursor = 'pointer';
-        todoText.addEventListener('click', () => toggleTodo(todo.id));
-        todoText.addEventListener('dblclick', () => {
-            state.editingTodo = todo.id;
-            renderTodos();
-        });
-    }
-
-    todoContent.appendChild(checkbox);
-    todoContent.appendChild(todoText);
-    todoEl.appendChild(todoContent);
+    const todoText = document.createElement('span');
+    todoText.className = 'todo-text';
+    todoText.textContent = todo.text;
 
     const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'actions-div';
-
-    const moveHandle = document.createElement('i');
-    moveHandle.className = 'todo-button fas fa-bars move-handle me-2';
-    moveHandle.style.cursor = 'grab';
-    moveHandle.title = 'Drag to reorder';
-    actionsDiv.appendChild(moveHandle);
-
-    if (state.editingTodo === todo.id) {
-        const saveIcon = document.createElement('i');
-        saveIcon.className = 'todo-button fas fa-save save-icon me-2';
-        saveIcon.addEventListener('click', () => {
-            saveEditTodoInline(todo.id, todoText.value);
-        });
-        actionsDiv.appendChild(saveIcon);
-    } else {
-        const editIcon = document.createElement('i');
-        editIcon.className = 'todo-button fas fa-edit edit-icon me-2';
-        editIcon.addEventListener('click', () => {
-            state.editingTodo = todo.id;
-            renderTodos();
-        });
-        actionsDiv.appendChild(editIcon);
-    }
+    actionsDiv.className = 'todo-actions';
 
     const moveIcon = document.createElement('i');
     moveIcon.className = 'todo-button fas fa-folder move-icon me-2';
@@ -537,7 +420,6 @@ function createTodoElement(todo) {
     reminderIcon.title = todo.reminder ? 'Disable reminder' : 'Set reminder';
     reminderIcon.addEventListener('click', () => {
         if (todo.reminder) {
-            
             todo.reminder = null;
             if (todo.notificationTimeout) {
                 clearTimeout(todo.notificationTimeout);
@@ -546,7 +428,6 @@ function createTodoElement(todo) {
             saveData();
             renderTodos();
         } else {
-            
             currentReminderTodoId = todo.id;
             const reminderDate = document.getElementById('reminder-date');
             const reminderTime = document.getElementById('reminder-time');
@@ -690,6 +571,12 @@ async function setReminder(todoId, date, time) {
         const [hours, minutes] = time.split(':').map(Number);
         const reminderDate = new Date(year, month - 1, day, hours, minutes);
         
+        // Clear any existing reminder
+        if (todo.notificationTimeout) {
+            clearTimeout(todo.notificationTimeout);
+            todo.notificationTimeout = null;
+        }
+        
         todo.reminder = reminderDate.getTime();
         await saveData();
         renderTodos();
@@ -706,7 +593,7 @@ function scheduleNotification(todo) {
     if (reminderTime > now) {
         const timeUntilReminder = reminderTime - now;
         
-        
+        // Clear any existing timeout
         if (todo.notificationTimeout) {
             clearTimeout(todo.notificationTimeout);
         }
@@ -718,7 +605,6 @@ function scheduleNotification(todo) {
                     icon: 'todo.png'
                 });
 
-                
                 notificationSound.play().catch(error => {
                     console.error('Error playing notification sound:', error);
                 });
