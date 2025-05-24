@@ -33,8 +33,9 @@ class TodoSync {
             // Restore previous connection if exists
             if (this.roomId) {
                 if (this.isHost) {
-                    // If we were the host, we need to wait for connections
+                    // If we were the host, we need to recreate the room
                     console.log('Restoring host connection for room:', this.roomId);
+                    await this.createRoom();
                 } else {
                     // If we were a client, we need to reconnect
                     console.log('Restoring client connection to room:', this.roomId);
@@ -45,12 +46,15 @@ class TodoSync {
 
         this.peer.on('error', (err) => {
             console.error('PeerJS error:', err);
+            const errorMessage = typeof err === 'object' ? JSON.stringify(err) : err.toString();
             if (err.type === 'peer-unavailable') {
-                console.error('Peer is unavailable. Please check if the peer ID is correct and the peer is online.');
+                alert('Peer is unavailable. Please check if the peer ID is correct and the peer is online.');
             } else if (err.type === 'network') {
-                console.error('Network error. Please check your internet connection.');
+                alert('Network error. Please check your internet connection.');
             } else if (err.type === 'webrtc') {
-                console.error('WebRTC error. This might be due to browser compatibility or network restrictions.');
+                alert('WebRTC error. This might be due to browser compatibility or network restrictions.');
+            } else {
+                alert('Connection error: ' + errorMessage);
             }
         });
 
@@ -111,15 +115,16 @@ class TodoSync {
             });
             
             if (!conn) {
-                alert('Failed to create connection to room:', roomId);
+                alert('Failed to create connection to room: ' + roomId);
                 return false;
             }
             
             this.handleConnection(conn);
             return true;
         } catch (error) {
-            alert('Error joining room:', error);
-            console.log(error);
+            const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error.toString();
+            alert('Error joining room: ' + errorMessage);
+            console.error(error);
             return false;
         }
     }
@@ -153,6 +158,20 @@ class TodoSync {
                 const parsedCurrentState = typeof currentState === 'string' ? JSON.parse(currentState) : currentState;
                 const parsedNewState = typeof newState === 'string' ? JSON.parse(newState) : newState;
                 
+                // Ensure categories exist in the new state
+                if (!parsedNewState.categories || !Array.isArray(parsedNewState.categories)) {
+                    parsedNewState.categories = [{ id: 'default', name: 'General', isDefault: true }];
+                }
+                
+                // Ensure todos have proper category references
+                if (parsedNewState.todos && Array.isArray(parsedNewState.todos)) {
+                    parsedNewState.todos.forEach(todo => {
+                        if (!todo.categoryId || !parsedNewState.categories.some(c => c.id === todo.categoryId)) {
+                            todo.categoryId = 'default';
+                        }
+                    });
+                }
+                
                 const mergedState = this.mergeStates(parsedCurrentState, parsedNewState);
                 
                 await localforage.setItem('todoAppState', JSON.stringify(mergedState));
@@ -161,7 +180,9 @@ class TodoSync {
                     await window.loadData();
                 }
             } catch (error) {
-                console.error('Error during sync:', error);
+                const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error.toString();
+                console.error('Error during sync:', errorMessage);
+                alert('Error during sync: ' + errorMessage);
             } finally {
                 this.syncInProgress = false;
             }

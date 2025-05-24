@@ -339,38 +339,36 @@ async function confirmMoveTask() {
 
 function renderTodos() {
     const currentCategory = state.categories.find(c => c.id === state.currentCategoryId);
-    currentCategoryTitle.value = currentCategory ? currentCategory.name : 'General';
-
-
-    currentCategoryTitle.readOnly = true;
-    currentCategoryTitle.ondblclick = function() {
-        this.readOnly = false;
-        this.focus();
-        this.select();
-    };
-    currentCategoryTitle.onblur = function() {
-        if (!this.readOnly) {
-            const newName = this.value.trim();
-            if (newName) {
-                const category = state.categories.find(c => c.id === state.currentCategoryId);
-                if (category) {
-                    category.name = newName;
-                    saveData();
-                    renderCategories();
+    if (currentCategoryTitle) {
+        currentCategoryTitle.value = currentCategory ? currentCategory.name : 'General';
+        currentCategoryTitle.readOnly = true;
+        currentCategoryTitle.ondblclick = function() {
+            this.readOnly = false;
+            this.focus();
+            this.select();
+        };
+        currentCategoryTitle.onblur = function() {
+            if (!this.readOnly) {
+                const newName = this.value.trim();
+                if (newName) {
+                    const category = state.categories.find(c => c.id === state.currentCategoryId);
+                    if (category) {
+                        category.name = newName;
+                        saveData();
+                        renderCategories();
+                    }
                 }
+                this.readOnly = true;
             }
-            this.readOnly = true;
-        }
-    };
-    currentCategoryTitle.onkeypress = function(e) {
-        if (e.key === 'Enter') {
-            this.blur();
-        }
-    };
-
+        };
+        currentCategoryTitle.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                this.blur();
+            }
+        };
+    }
 
     let filteredTodos = state.todos.filter(todo => todo.categoryId === state.currentCategoryId);
-
 
     const activeTodos = filteredTodos.filter(todo => !todo.completed)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -378,17 +376,19 @@ function renderTodos() {
     const completedTodos = filteredTodos.filter(todo => todo.completed)
         .sort((a, b) => b.completedAt - a.completedAt);
 
+    if (activeItemsContainer) {
+        activeItemsContainer.innerHTML = '';
+        activeTodos.forEach(todo => {
+            activeItemsContainer.appendChild(createTodoElement(todo));
+        });
+    }
 
-    activeItemsContainer.innerHTML = '';
-    activeTodos.forEach(todo => {
-        activeItemsContainer.appendChild(createTodoElement(todo));
-    });
-
-
-    completedItemsContainer.innerHTML = '';
-    completedTodos.forEach(todo => {
-        completedItemsContainer.appendChild(createTodoElement(todo));
-    });
+    if (completedItemsContainer) {
+        completedItemsContainer.innerHTML = '';
+        completedTodos.forEach(todo => {
+            completedItemsContainer.appendChild(createTodoElement(todo));
+        });
+    }
 }
 
 function createTodoElement(todo) {
@@ -396,6 +396,9 @@ function createTodoElement(todo) {
     todoEl.className = `todo-item ${todo.completed ? 'completed' : ''}`;
     todoEl.draggable = true;
     todoEl.dataset.id = todo.id;
+
+    const todoContent = document.createElement('div');
+    todoContent.className = 'todo-content';
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -405,7 +408,11 @@ function createTodoElement(todo) {
 
     const todoText = document.createElement('span');
     todoText.className = 'todo-text';
-    todoText.textContent = todo.text;
+    todoText.textContent = todo.text || '';
+
+    todoContent.appendChild(checkbox);
+    todoContent.appendChild(todoText);
+    todoEl.appendChild(todoContent);
 
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'todo-actions';
