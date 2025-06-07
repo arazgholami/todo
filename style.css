@@ -508,3 +508,7 @@ input[type="checkbox"]:checked::after {
     color: var(--color-text-desc);
     opacity: 1;
 }
+
+.sync {
+    background-color: var(--color-bg-category-active);
+}
