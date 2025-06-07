@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#6366f1">
     <meta name="description" content="A simple todo application that works offline">
     <title>ToDo</title>
-    <link rel="shortcut icon" href="./todo-icon.png?ver=1.39" type="image/png">
-    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.39">
-    <link rel="manifest" href="./manifest.json?ver=1.39">
+    <link rel="shortcut icon" href="./todo-icon.png?ver=1.40" type="image/png">
+    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.40">
+    <link rel="manifest" href="./manifest.json?ver=1.40">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?ver=1.39">
+    <link rel="stylesheet" href="./style.css?ver=1.40">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/9.0.1/uuid.min.js"></script>
     <script>
@@ -23,7 +23,7 @@
             document.head.appendChild(script);
         }
     </script>
-    <script src="script.js?ver=1.39" defer></script>
+    <script src="script.js?ver=1.40" defer></script>
 </head>
 <body>
     <button class="sidebar-toggle d-md-none">
@@ -36,7 +36,6 @@
                 <div class="col-md-3 col-lg-3 sidebar p-0">
                     <div class="p-3">
                         <div id="categories-list"></div>
-
                         <div class="mt-4">
                             <div class="input-group">
                                 <input type="text" id="new-category-input" class="form-control" placeholder="New category">
@@ -45,19 +44,39 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <div class="card sync">
-                                <div class="card-body p-2 d-flex flex-column align-items-stretch gap-2">
-                                    <label for="sync-userid" class="form-label mb-1">Sync</label>
-                                    <input type="text" id="sync-userid" class="form-control form-control-sm mb-2" style="max-width:100%;" readonly>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-outline-primary btn-sm flex-fill" id="push-btn">Push</button>
-                                        <button class="btn btn-outline-success btn-sm flex-fill" id="pull-btn">Pull</button>
-                                    </div>
-                                    <span id="sync-message" class="text-muted small mt-1"></span>
+                        <div class="card sync">
+                            <div class="card-body p-2 d-flex flex-column align-items-stretch gap-2">
+                                <label for="sync-userid" class="form-label mb-1">Sync</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" id="sync-userid" class="form-control form-control-sm" style="max-width:100%;" placeholder="Enter sync code">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="copy-sync-btn" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
                                 </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-outline-primary btn-sm flex-fill" id="push-btn">Push</button>
+                                    <button class="btn btn-outline-success btn-sm flex-fill" id="pull-btn">Pull</button>
+                                </div>
+                                <span id="sync-message" class="text-muted small mt-1"></span>
                             </div>
                         </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const copyBtn = document.getElementById('copy-sync-btn');
+                                const syncInput = document.getElementById('sync-userid');
+                                if (copyBtn && syncInput) {
+                                    copyBtn.addEventListener('click', function() {
+                                        syncInput.select();
+                                        syncInput.setSelectionRange(0, 99999);
+                                        document.execCommand('copy');
+                                        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                                        setTimeout(() => {
+                                            copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                                        }, 1200);
+                                    });
+                                }
+                            });
+                        </script>
                     </div>
                 </div>
                 <div class="col-md-9 col-lg-9 tasks-list">
@@ -82,7 +101,7 @@
     <div class="footer">
         <a href="https://arazgholami.github.io/todo/" target="_blank" rel="noopener noreferrer" class="text-decoration-none logo-wrapper">
             <span class="logo">
-                <img src="todo.png?ver=1.39" alt="ToDo Logo">
+                <img src="todo.png?ver=1.40" alt="ToDo Logo">
                 ToDo
             </span>
         </a>
@@ -170,118 +189,148 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- SYNC SECTION ---
-        const FIREBASE_PROJECT = 'todo-f4e76';
-        const SYNC_COLLECTION = 'todos';
-        const USERID_KEY = 'sync_userid';
-        const SYNC_MESSAGE = document.getElementById('sync-message');
-        const SYNC_USERID_INPUT = document.getElementById('sync-userid');
-        // Generate 8-char alphanumeric userId
-        function generateUserId() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let id = '';
-            for (let i = 0; i < 8; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
-            return id;
-        }
-        // Get or create userId
-        function getUserId() {
-            let id = localStorage.getItem(USERID_KEY);
-            if (!id) {
-                id = generateUserId();
-                localStorage.setItem(USERID_KEY, id);
-            }
-            return id;
-        }
-        // Set userId in UI
-        function setUserIdUI() {
-            SYNC_USERID_INPUT.value = getUserId();
-        }
-        setUserIdUI();
-        // --- PUSH ---
-        async function pushTodos(userId, todos, categories) {
-            try {
-                await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/${SYNC_COLLECTION}/${userId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fields: {
-                            data: { stringValue: JSON.stringify({ todos, categories }) },
-                            timestamp: { timestampValue: new Date().toISOString() }
-                        }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope:', registration.scope);
                     })
-                });
-                SYNC_MESSAGE.textContent = 'Pushed successfully!';
-                SYNC_MESSAGE.className = 'ms-2 text-success small';
-            } catch (err) {
-                SYNC_MESSAGE.textContent = 'Error: ' + err.message;
-                SYNC_MESSAGE.className = 'ms-2 text-danger small';
-            }
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
         }
-        // --- PULL ---
-        async function pullTodos(userId) {
-            try {
-                const response = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/${SYNC_COLLECTION}/${userId}`);
-                if (!response.ok) throw new Error('Not found or network error');
-                const data = await response.json();
-                if (!data.fields || !data.fields.data) throw new Error('No data found');
-                const remote = JSON.parse(data.fields.data.stringValue);
-                SYNC_MESSAGE.textContent = 'Pulled successfully!';
-                SYNC_MESSAGE.className = 'ms-2 text-success small';
-                return remote;
-            } catch (err) {
-                SYNC_MESSAGE.textContent = 'Error: ' + err.message;
-                SYNC_MESSAGE.className = 'ms-2 text-danger small';
-                return null;
-            }
-        }
-        // --- MERGE ---
-        function mergeById(localArr, remoteArr) {
-            const map = new Map();
-            for (const item of localArr) map.set(item.id, item);
-            for (const item of remoteArr) map.set(item.id, item);
-            return Array.from(map.values());
-        }
-        // --- HOOKUP BUTTONS ---
-        document.getElementById('push-btn').onclick = async () => {
-            SYNC_MESSAGE.textContent = 'Pushing...';
-            SYNC_MESSAGE.className = 'ms-2 text-muted small';
-            // Get all todos and categories from localForage
-            const [todos, categories] = await Promise.all([
-                localforage.getItem('todos').then(x => x || []),
-                localforage.getItem('categories').then(x => x || [])
-            ]);
-            // Ensure each todo has a unique id
-            for (const t of todos) {
-                if (!t.id) t.id = uuid.v4();
-            }
-            for (const c of categories) {
-                if (!c.id) c.id = uuid.v4();
-            }
-            await localforage.setItem('todos', todos);
-            await localforage.setItem('categories', categories);
-            await pushTodos(getUserId(), todos, categories);
-        };
-        document.getElementById('pull-btn').onclick = async () => {
-            SYNC_MESSAGE.textContent = 'Pulling...';
-            SYNC_MESSAGE.className = 'ms-2 text-muted small';
-            const remote = await pullTodos(getUserId());
-            if (!remote) return;
-            // Get local
-            const [localTodos, localCategories] = await Promise.all([
-                localforage.getItem('todos').then(x => x || []),
-                localforage.getItem('categories').then(x => x || [])
-            ]);
-            // Merge
-            const mergedTodos = mergeById(localTodos, remote.todos || []);
-            const mergedCategories = mergeById(localCategories, remote.categories || []);
-            await localforage.setItem('todos', mergedTodos);
-            await localforage.setItem('categories', mergedCategories);
-            // Optionally, refresh UI if you have a function for that
-            if (typeof renderTodos === 'function') renderTodos();
-            if (typeof renderCategories === 'function') renderCategories();
-        };
-        // ...existing code...
     </script>
-    <!-- ...existing code... -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlwoO8IdZczO6a-8ou6U2OaKw5ISuRO2c",
+            authDomain: "todo-f4e76.firebaseapp.com",
+            projectId: "todo-f4e76",
+            storageBucket: "todo-f4e76.firebasestorage.app",
+            messagingSenderId: "734505856963",
+            appId: "1:734505856963:web:d08ac1a55a29b85b8fd776",
+            measurementId: "G-6EHDDZ54ZX"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        const syncMessage = document.getElementById("sync-message");
+        const syncUserIdInput = document.getElementById("sync-userid");
+        const pushBtn = document.getElementById("push-btn");
+        const pullBtn = document.getElementById("pull-btn");
+
+        function showMessage(msg, isError = false) {
+            syncMessage.textContent = msg;
+            syncMessage.className = `text-${isError ? "danger" : "success"} small mt-1`;
+            setTimeout(() => {
+            syncMessage.textContent = "";
+            syncMessage.className = "text-muted small mt-1";
+            }, 3000);
+        }
+
+        // Generate and set sync code if not present
+        function generateSyncCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        const SYNC_CODE_KEY = 'sync-code';
+        let syncCode = localStorage.getItem(SYNC_CODE_KEY);
+        if (!syncCode) {
+            syncCode = generateSyncCode();
+            localStorage.setItem(SYNC_CODE_KEY, syncCode);
+        }
+        syncUserIdInput.value = syncCode;
+
+        // NOTE: 'state' and 'saveData', 'renderApp' must be defined globally elsewhere for push/pull to work
+        async function pushData() {
+            const userId = syncUserIdInput.value.trim();
+            if (!userId) {
+            showMessage("Please enter a sync code", true);
+            return;
+            }
+            // Check state.categories and state.todos
+            if (!state || !Array.isArray(state.categories) || !Array.isArray(state.todos)) {
+            showMessage("App data not loaded. Please reload the page.", true);
+            return;
+            }
+            try {
+            pushBtn.disabled = true;
+            pushBtn.textContent = "Pushing...";
+            const docRef = doc(db, "todos", userId);
+            const payload = {
+                data: JSON.stringify({
+                categories: state.categories,
+                todos: state.todos
+                }),
+                timestamp: Date.now()
+            };
+            console.log("Pushing data to Firestore:", payload);
+            await setDoc(docRef, payload);
+            showMessage("Data pushed successfully!");
+            } catch (error) {
+            console.error("Push error:", error);
+            showMessage("Push failed. Please try again.", true);
+            } finally {
+            pushBtn.disabled = false;
+            pushBtn.textContent = "Push";
+            }
+        }
+
+        async function pullData() {
+            const userId = syncUserIdInput.value.trim();
+            if (!userId) {
+            showMessage("Please enter a sync code", true);
+            return;
+            }
+            try {
+            pullBtn.disabled = true;
+            pullBtn.textContent = "Pulling...";
+            const docRef = doc(db, "todos", userId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const serverData = docSnap.data();
+                let parsed = { categories: [], todos: [] };
+                try {
+                parsed = JSON.parse(serverData.data);
+                } catch (e) {
+                showMessage("Corrupted sync data.", true);
+                return;
+                }
+                const existingCategoryIds = new Set(state.categories.map(c => c.id));
+                const existingTodoIds = new Set(state.todos.map(t => t.id));
+                const newCategories = (parsed.categories || []).filter(c => !existingCategoryIds.has(c.id));
+                const newTodos = (parsed.todos || []).filter(t => !existingTodoIds.has(t.id));
+                state.categories.push(...newCategories);
+                state.todos.push(...newTodos);
+                await saveData();
+                renderApp();
+                showMessage(`Pulled ${newCategories.length} categories and ${newTodos.length} tasks`);
+            } else {
+                showMessage("No data found for this sync code", true);
+            }
+            } catch (error) {
+            console.error("Pull error:", error);
+            showMessage("Pull failed. Please try again.", true);
+            } finally {
+            pullBtn.disabled = false;
+            pullBtn.textContent = "Pull";
+            }
+        }
+
+        pushBtn.addEventListener("click", pushData);
+        pullBtn.addEventListener("click", pullData);
+        </script>
 </body>
 </html>
