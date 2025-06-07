@@ -44,13 +44,17 @@ async function loadData() {
     const savedState = await localforage.getItem('todoAppState');
     if (savedState) {
         state = JSON.parse(savedState);
-
         if (!state.categories.some(c => c.id === 'default')) {
             state.categories.push({ id: 'default', name: 'General', isDefault: true });
         }
-
         state.editingTodo = null;
         state.editingCategory = null;
+        // Ensure all todos have a link property
+        if (state.todos && Array.isArray(state.todos)) {
+            state.todos.forEach(todo => {
+                if (!('link' in todo)) todo.link = undefined;
+            });
+        }
     }
     renderApp();
 }
@@ -265,12 +269,12 @@ async function confirmDeleteCategory() {
 
 async function addTodo() {
     const todoText = newTodoInput.value.trim();
+    const todoLinkInput = document.getElementById('new-todo-link');
+    const todoLink = todoLinkInput ? todoLinkInput.value.trim() : '';
     if (todoText) {
         const now = Date.now();
-        
         const categoryTodos = state.todos.filter(t => t.categoryId === state.currentCategoryId);
         const maxOrder = categoryTodos.length > 0 ? Math.max(...categoryTodos.map(t => t.order || 0)) : -1;
-        
         const newTodo = {
             id: generateId(),
             text: todoText,
@@ -278,11 +282,12 @@ async function addTodo() {
             categoryId: state.currentCategoryId,
             createdAt: now,
             updatedAt: now,
-            order: maxOrder + 1
+            order: maxOrder + 1,
+            link: todoLink || undefined
         };
-
         state.todos.unshift(newTodo);
         newTodoInput.value = '';
+        if (todoLinkInput) todoLinkInput.value = '';
         renderTodos();
         await saveData();
     }
@@ -381,6 +386,8 @@ function renderTodos() {
         activeTodos.forEach(todo => {
             activeItemsContainer.appendChild(createTodoElement(todo));
         });
+        // Add drag-and-drop for active tasks
+        addTaskDragAndDropHandlers();
     }
 
     if (completedItemsContainer) {
@@ -388,6 +395,60 @@ function renderTodos() {
         completedTodos.forEach(todo => {
             completedItemsContainer.appendChild(createTodoElement(todo));
         });
+    }
+}
+
+// --- Drag and drop for tasks ---
+function addTaskDragAndDropHandlers() {
+    const taskElements = activeItemsContainer.querySelectorAll('.todo-item');
+    let draggingEl = null;
+
+    taskElements.forEach(el => {
+        el.setAttribute('draggable', 'true');
+        el.addEventListener('dragstart', (e) => {
+            draggingEl = el;
+            el.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        el.addEventListener('dragend', () => {
+            draggingEl = null;
+            el.classList.remove('dragging');
+        });
+        el.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!draggingEl || draggingEl === el) return;
+            const rect = el.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                activeItemsContainer.insertBefore(draggingEl, el);
+            } else {
+                activeItemsContainer.insertBefore(draggingEl, el.nextSibling);
+            }
+        });
+        el.addEventListener('drop', (e) => {
+            e.preventDefault();
+            updateTaskOrderFromDOM();
+        });
+    });
+    // Also update order when drag ends (in case drop doesn't fire)
+    activeItemsContainer.addEventListener('drop', updateTaskOrderFromDOM);
+    activeItemsContainer.addEventListener('dragend', updateTaskOrderFromDOM);
+}
+
+function updateTaskOrderFromDOM() {
+    const taskElements = activeItemsContainer.querySelectorAll('.todo-item');
+    const ids = Array.from(taskElements).map(el => el.dataset.id);
+    let changed = false;
+    ids.forEach((id, idx) => {
+        const todo = state.todos.find(t => t.id === id);
+        if (todo && todo.order !== idx) {
+            todo.order = idx;
+            changed = true;
+        }
+    });
+    if (changed) {
+        saveData();
+        renderTodos();
     }
 }
 
@@ -405,6 +466,7 @@ function createTodoElement(todo) {
     checkbox.className = 'todo-checkbox';
     checkbox.checked = todo.completed;
     checkbox.addEventListener('change', () => toggleTodo(todo.id));
+    checkbox.style.marginRight = '5px'; // Add margin between checkbox and title
 
     const todoText = document.createElement('span');
     todoText.className = 'todo-text';
@@ -412,6 +474,19 @@ function createTodoElement(todo) {
 
     todoContent.appendChild(checkbox);
     todoContent.appendChild(todoText);
+
+    // Add link if present
+    let linkEl = null;
+    if (todo.link) {
+        linkEl = document.createElement('a');
+        linkEl.href = todo.link;
+        linkEl.textContent = 'Link';
+        linkEl.target = '_blank';
+        linkEl.rel = 'noopener noreferrer';
+        linkEl.className = 'todo-link ms-2';
+        todoContent.appendChild(linkEl);
+    }
+
     todoEl.appendChild(todoContent);
 
     const actionsDiv = document.createElement('div');
@@ -457,6 +532,20 @@ function createTodoElement(todo) {
     actionsDiv.appendChild(deleteIcon);
     todoEl.appendChild(actionsDiv);
 
+    // Add click event to toggle checkbox when clicking on the todo item (except link or actions)
+    todoEl.addEventListener('click', function(e) {
+        // Don't toggle if clicking on a link or action button
+        if (
+            (linkEl && linkEl.contains(e.target)) ||
+            actionsDiv.contains(e.target) ||
+            checkbox.contains(e.target)
+        ) {
+            return;
+        }
+        checkbox.checked = !checkbox.checked;
+        toggleTodo(todo.id);
+    });
+
     return todoEl;
 }
 
@@ -478,96 +567,6 @@ async function saveEditTodoInline(todoId, newText) {
 function renderApp() {
     renderCategories();
     renderTodos();
-}
-
-
-function addSyncUI() {
-    const syncContainer = document.createElement('div');
-    syncContainer.className = 'sync-container mt-4 p-3';
-    syncContainer.innerHTML = `
-        <h6 class="mb-3">Sync</h6>
-        <div class="d-flex gap-2 mb-2">
-            <button class="btn btn-primary btn-sm" id="createRoomBtn">Create Space</button>
-            <button class="btn btn-outline-primary btn-sm" id="joinRoomBtn">Join Space</button>
-        </div>
-        <div id="roomInfo" class="d-none">
-            <div class="input-group mb-2">
-                <input type="text" class="form-control form-control-sm" id="roomIdInput" readonly>
-                <button class="btn btn-outline-secondary btn-sm" id="copyRoomIdBtn">
-                    <i class="fas fa-copy"></i>
-                </button>
-            </div>
-            <div id="connectionStatus" class="mt-2 small">
-                <span class="badge bg-secondary">Disconnected</span>
-            </div>
-        </div>
-        <div id="joinRoomForm" class="d-none">
-            <div class="input-group mb-2">
-                <input type="text" class="form-control form-control-sm" id="joinRoomIdInput" placeholder="Enter Space ID">
-                <button class="btn btn-primary btn-sm" id="confirmJoinBtn">Join</button>
-            </div>
-            <div id="joinConnectionStatus" class="mt-2 small">
-                <span class="badge bg-secondary">Disconnected</span>
-            </div>
-        </div>
-    `;
-    
-    document.querySelector('.sidebar').appendChild(syncContainer);
-    
-    
-    document.getElementById('createRoomBtn').addEventListener('click', async () => {
-        const roomId = await window.todoSync.createRoom();
-        document.getElementById('roomIdInput').value = roomId;
-        document.getElementById('roomInfo').classList.remove('d-none');
-        document.getElementById('joinRoomForm').classList.add('d-none');
-    });
-    
-    document.getElementById('joinRoomBtn').addEventListener('click', () => {
-        document.getElementById('joinRoomForm').classList.remove('d-none');
-        document.getElementById('roomInfo').classList.add('d-none');
-    });
-    
-    document.getElementById('copyRoomIdBtn').addEventListener('click', () => {
-        const roomIdInput = document.getElementById('roomIdInput');
-        roomIdInput.select();
-        document.execCommand('copy');
-    });
-    
-    document.getElementById('confirmJoinBtn').addEventListener('click', async () => {
-        const roomId = document.getElementById('joinRoomIdInput').value.trim();
-        if (roomId) {
-            await window.todoSync.joinRoom(roomId);
-            document.getElementById('joinRoomForm').classList.add('d-none');
-        }
-    });
-
-    // Add connection status monitoring
-    if (window.todoSync) {
-        window.todoSync.peer.on('connection', (conn) => {
-            const statusElement = document.getElementById('connectionStatus');
-            const joinStatusElement = document.getElementById('joinConnectionStatus');
-            
-            conn.on('open', () => {
-                if (statusElement) statusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
-                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-success">Connected</span>';
-            });
-            
-            conn.on('close', () => {
-                if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
-                if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
-            });
-            
-            conn.on('iceStateChange', (state) => {
-                if (state === 'checking') {
-                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
-                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-warning">Connecting...</span>';
-                } else if (state === 'failed') {
-                    if (statusElement) statusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
-                    if (joinStatusElement) joinStatusElement.innerHTML = '<span class="badge bg-danger">Connection Failed</span>';
-                }
-            });
-        });
-    }
 }
 
 
@@ -593,29 +592,26 @@ async function setReminder(todoId, date, time) {
 
 function scheduleNotification(todo) {
     if (!todo.reminder) return;
-
     const reminderTime = new Date(todo.reminder);
     const now = new Date();
-
     if (reminderTime > now) {
         const timeUntilReminder = reminderTime - now;
-        
-        // Clear any existing timeout
         if (todo.notificationTimeout) {
             clearTimeout(todo.notificationTimeout);
         }
-
         todo.notificationTimeout = setTimeout(() => {
+            // Always play sound, even if notification is not shown
+            try {
+                notificationSound.currentTime = 0;
+                notificationSound.play();
+            } catch (error) {
+                console.error('Error playing notification sound:', error);
+            }
             if ('Notification' in window && Notification.permission === 'granted') {
                 const notification = new Notification('Task Reminder', {
                     body: todo.text,
                     icon: 'todo.png'
                 });
-
-                notificationSound.play().catch(error => {
-                    console.error('Error playing notification sound:', error);
-                });
-
                 notification.onclick = function() {
                     window.focus();
                     this.close();
@@ -671,6 +667,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    // Add Enter key support for link input
+    const newTodoLinkInput = document.getElementById('new-todo-link');
+    if (newTodoLinkInput) {
+        newTodoLinkInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+    }
 
 
     if (confirmMoveBtn) {
@@ -713,8 +718,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     
-    addSyncUI();
-
     confirmReminderBtn.addEventListener('click', () => {
         const date = document.getElementById('reminder-date').value;
         const time = document.getElementById('reminder-time').value;

@@ -1,10 +1,9 @@
-const CACHE_NAME = 'todo-app-v1.35';
+const CACHE_NAME = 'todo-app-v1.39';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './script.js',
-  './sync.js',
   './todo-icon.png',
   './todo.png',
   './manifest.json',
