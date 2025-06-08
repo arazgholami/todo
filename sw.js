@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-app-v1.43';
+const CACHE_NAME = 'todo-app-v1.44';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -46,6 +46,26 @@ self.addEventListener('activate', (event) => {
   );
   // Take control of all clients immediately
   self.clients.claim();
+});
+
+// Handle push notifications
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_REMINDER') {
+    const { todoId, todoText, timestamp } = event.data;
+    const delay = timestamp - Date.now();
+    
+    if (delay > 0) {
+      setTimeout(() => {
+        self.registration.showNotification('Task Reminder', {
+          body: todoText,
+          icon: './todo.png',
+          tag: todoId,
+          renotify: true,
+          requireInteraction: true
+        });
+      }, delay);
+    }
+  }
 });
 
 // Fetch event - serve from cache, fall back to network

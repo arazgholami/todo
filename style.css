@@ -1,62 +1,67 @@
-/* Light mode: monochrome (black, gray, white) color palette */
+/* macOS inspired theme with system blue and modern Apple styling */
 :root {
-  --color-bg-main: #fff;
-  --color-bg-header: #f7f7f7;
-  --color-bg-sidebar: #e5e5e5;
-  --color-bg-sidebar-mobile: #e5e5e5;
-  --color-bg-category-hover: #ededed;
-  --color-bg-category-active: #d1d1d1;
-  --color-bg-todo: #fff;
-  --color-bg-todo-completed: #f3f3f3;
-  --color-bg-todo-editing: #f8f8f8;
-  --color-bg-footer: #f7f7f7;
-  --color-bg-btn: #222;
-  --color-bg-btn-hover: #444;
-  --color-bg-input: #f3f3f3;
-  --color-bg-input-focus: #fff;
-  --color-bg-scrollbar-track: #f3f3f3;
-  --color-bg-scrollbar-thumb: #bdbdbd;
-  --color-bg-scrollbar-thumb-hover: #444;
-  --color-bg-todo-dragging: #f8f8f8;
-  --color-bg-todo-dragging-border: #444;
-  --color-border-header: #bdbdbd;
-  --color-border-todo: #bdbdbd;
-  --color-border-todo-edit: #444;
-  --color-border-footer: #bdbdbd;
-  --color-border-checkbox: #444;
-  --color-text-main: #111;
-  --color-text-header: #111;
-  --color-text-desc: #444;
-  --color-text-sidebar: #111;
-  --color-text-category: #222;
-  --color-text-category-active: #111;
-  --color-text-category-dragging: #444;
-  --color-text-category-main: #111;
-  --color-text-todo: #111;
-  --color-text-todo-completed: #888;
-  --color-text-btn: #fff;
-  --color-text-btn-hover: #fff;
-  --color-text-footer: #444;
-  --color-text-footer-link: #111;
-  --color-text-author: #888;
-  --color-text-logo: #111;
-  --color-text-move-handle: #888;
-  --color-text-move-handle-hover: #444;
-  --color-todo-link: #111;
-  --color-todo-link-hover: #000;
-  --color-checkbox-bg: #fff;
-  --color-checkbox-check: #111;
-  --color-save-icon: #111;
-  --color-save-icon-hover: #000;
-  --color-delete-edit-move-icon: #444;
+  --color-bg-main: #ffffff;
+  --color-bg-header: #f5f5f7;
+  --color-bg-sidebar: #f2f2f7;
+  --color-bg-sidebar-mobile: #f2f2f7;
+  --color-bg-category-hover: #e8f4fd;
+  --color-bg-category-active: #ccd1d7;
+  --color-bg-todo: #ffffff;
+  --color-bg-todo-completed: #f2f2f7;
+  --color-bg-todo-editing: #ffffff;
+  --color-bg-footer: #f5f5f7;
+  --color-bg-btn: #007aff;
+  --color-bg-btn-hover: #0051d5;
+  --color-bg-input: #ececec;
+  --color-bg-input-focus: #ffffff;
+  --color-bg-scrollbar-track: #f0f0f0;
+  --color-bg-scrollbar-thumb: #c7c7cc;
+  --color-bg-scrollbar-thumb-hover: #aeaeb2;
+  --color-bg-todo-dragging: #f0f9ff;
+  --color-bg-todo-dragging-border: #007aff;
+  --color-border-header: #d1d1d6;
+  --color-border-todo: #d1d1d6;
+  --color-border-todo-edit: #007aff;
+  --color-border-footer: #d1d1d6;
+  --color-border-checkbox: #8e8e93;
+  --color-text-main: #1d1d1f;
+  --color-text-header: #1d1d1f;
+  --color-text-desc: #6d6d70;
+  --color-text-sidebar: #1d1d1f;
+  --color-text-category: #1d1d1f;
+  --color-text-category-active: #ffffff;
+  --color-text-category-dragging: #6d6d70;
+  --color-text-category-main: #1d1d1f;
+  --color-text-todo: #1d1d1f;
+  --color-text-todo-completed: #8e8e93;
+  --color-text-btn: #ffffff;
+  --color-text-btn-hover: #ffffff;
+  --color-text-footer: #6d6d70;
+  --color-text-footer-link: #007aff;
+  --color-text-author: #8e8e93;
+  --color-text-logo: #007aff;
+  --color-text-move-handle: #8e8e93;
+  --color-text-move-handle-hover: #6d6d70;
+  --color-todo-link: #007aff;
+  --color-todo-link-hover: #0051d5;
+  --color-checkbox-bg: #ffffff;
+  --color-checkbox-check: #007aff;
+  --color-save-icon: #007aff;
+  --color-save-icon-hover: #0051d5;
+  --color-delete-edit-move-icon: #6d6d70;
 }
 
 @media all and (display-mode: standalone), (display-mode: fullscreen) {
   *, *:before, *:after {
-    -webkit-user-select: none; /* Chrome/Safari */        
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+ */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
+  .footer {
+    height: 90px !important;
+    padding-bottom: 40px;
+ }
 }
 
 body {
@@ -103,9 +108,29 @@ body {
     background: var(--color-bg-sidebar);
     color: var(--color-text-sidebar);
     min-height: calc(100vh - 50px);
+    max-height: 100vh;
+    overflow-y: auto;
     padding-top: 20px;
     transition: transform 0.3s ease;
     z-index: 1000;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: var(--color-bg-scrollbar-track);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--color-bg-scrollbar-thumb);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-bg-scrollbar-thumb-hover);
 }
 .tasks-list {
     padding: 20px;
@@ -544,4 +569,37 @@ input[type="checkbox"]:checked::after {
     background-color: var(--color-bg-input);
     color: var(--color-delete-edit-move-icon);
     border: 1px solid var(--color-border-todo);
+}
+
+.sync .btn-outline-secondary {
+    color: var(--color-text-category) !important;
+    border: 1px solid var(--color-border-todo) !important;
+    background: transparent !important;
+}
+
+.sync .btn-outline-secondary:hover {
+    background: var(--color-bg-btn) !important;
+    color: var(--color-text-btn) !important;
+}
+
+.sync .btn-outline-danger {
+    color: #dc3545 !important;
+    border: 1px solid #dc3545 !important;
+    background: transparent !important;
+}
+
+.sync .btn-outline-danger:hover {
+    background: #dc3545 !important;
+    color: var(--color-text-btn) !important;
+}
+
+.sync .btn-outline-primary {
+    color: var(--color-bg-btn) !important;
+    border: 1px solid var(--color-bg-btn) !important;
+    background: transparent !important;
+}
+
+.sync .btn-outline-primary:hover {
+    background: var(--color-bg-btn) !important;
+    color: var(--color-text-btn) !important;
 }

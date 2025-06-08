@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="theme-color" content="#000000">
     <meta name="background-color" content="#ffffff">
     <meta name="description" content="A simple todo application that works offline">
     <title>ToDo</title>
-    <link rel="shortcut icon" href="./todo-icon.png?ver=1.43" type="image/png">
-    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.43">
-    <link rel="manifest" href="./manifest.json?ver=1.43">
+    <link rel="shortcut icon" href="./todo-icon.png?ver=1.44" type="image/png">
+    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.44">
+    <link rel="manifest" href="./manifest.json?ver=1.44">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?ver=1.43">
+    <link rel="stylesheet" href="./style.css?ver=1.44">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/9.0.1/uuid.min.js"></script>
     <script>
@@ -24,7 +24,7 @@
             document.head.appendChild(script);
         }
     </script>
-    <script src="script.js?ver=1.43" defer></script>
+    <script src="script.js?ver=1.44" defer></script>
 </head>
 <body>
     <button class="sidebar-toggle d-md-none">
@@ -59,6 +59,17 @@
                                     <button class="btn btn-outline-success btn-sm flex-fill" id="pull-btn">Pull</button>
                                 </div>
                                 <span id="sync-message" class="text-muted small mt-1"></span>
+                                <div class="d-flex gap-1 mt-3">
+                                    <button class="btn btn-outline-secondary btn-sm flex-fill" id="refresh-btn" title="Refresh Page">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm flex-fill" id="clear-btn" title="Clear All Data">
+                                        <i class="fas fa-trash-alt"></i> Clear
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm flex-fill" id="download-btn" title="Download Data">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <script>
@@ -102,7 +113,7 @@
     <div class="footer">
         <a href="https://arazgholami.github.io/todo/" target="_blank" rel="noopener noreferrer" class="text-decoration-none logo-wrapper">
             <span class="logo">
-                <img src="todo.png?ver=1.43" alt="ToDo Logo">
+                <img src="todo.png?ver=1.44" alt="ToDo Logo">
                 ToDo
             </span>
         </a>

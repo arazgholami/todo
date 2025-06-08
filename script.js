@@ -402,9 +402,12 @@ function renderTodos() {
 function addTaskDragAndDropHandlers() {
     const taskElements = activeItemsContainer.querySelectorAll('.todo-item');
     let draggingEl = null;
+    let touchStartY = 0;
 
     taskElements.forEach(el => {
         el.setAttribute('draggable', 'true');
+
+        // Mouse events
         el.addEventListener('dragstart', (e) => {
             draggingEl = el;
             el.classList.add('dragging');
@@ -429,12 +432,50 @@ function addTaskDragAndDropHandlers() {
             e.preventDefault();
             updateTaskOrderFromDOM();
         });
-    });
-    // Also update order when drag ends (in case drop doesn't fire)
-    activeItemsContainer.addEventListener('drop', updateTaskOrderFromDOM);
-    activeItemsContainer.addEventListener('dragend', updateTaskOrderFromDOM);
-}
 
+        // Touch events
+        el.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+            draggingEl = el;
+            el.classList.add('dragging');
+            e.preventDefault(); // Prevent scrolling while dragging
+        }, { passive: false });
+
+        el.addEventListener('touchmove', (e) => {
+            if (!draggingEl) return;
+            
+            const touch = e.touches[0];
+            const currentY = touch.clientY;
+            const elements = Array.from(activeItemsContainer.querySelectorAll('.todo-item:not(.dragging)'));
+            
+            const closest = elements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = currentY - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+            if (closest) {
+                activeItemsContainer.insertBefore(draggingEl, closest);
+            } else {
+                activeItemsContainer.appendChild(draggingEl);
+            }
+            
+            e.preventDefault(); // Prevent scrolling while dragging
+        }, { passive: false });
+
+        el.addEventListener('touchend', () => {
+            if (draggingEl) {
+                draggingEl.classList.remove('dragging');
+                updateTaskOrderFromDOM();
+                draggingEl = null;
+            }
+        });
+    });
+}
 function updateTaskOrderFromDOM() {
     const taskElements = activeItemsContainer.querySelectorAll('.todo-item');
     const ids = Array.from(taskElements).map(el => el.dataset.id);
@@ -594,23 +635,39 @@ function scheduleNotification(todo) {
     if (!todo.reminder) return;
     const reminderTime = new Date(todo.reminder);
     const now = new Date();
+    
     if (reminderTime > now) {
-        const timeUntilReminder = reminderTime - now;
         if (todo.notificationTimeout) {
             clearTimeout(todo.notificationTimeout);
         }
+
+        // Schedule notification in service worker for offline/closed app support
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SET_REMINDER',
+                todoId: todo.id,
+                todoText: todo.text,
+                timestamp: reminderTime.getTime()
+            });
+        }
+
+        // Also schedule in-app notification for when app is open
+        const timeUntilReminder = reminderTime - now;
         todo.notificationTimeout = setTimeout(() => {
-            // Always play sound, even if notification is not shown
             try {
                 notificationSound.currentTime = 0;
                 notificationSound.play();
             } catch (error) {
                 console.error('Error playing notification sound:', error);
             }
+            
             if ('Notification' in window && Notification.permission === 'granted') {
                 const notification = new Notification('Task Reminder', {
                     body: todo.text,
-                    icon: 'todo.png'
+                    icon: 'todo.png',
+                    tag: todo.id,
+                    renotify: true,
+                    requireInteraction: true
                 });
                 notification.onclick = function() {
                     window.focus();
@@ -751,6 +808,47 @@ document.addEventListener('DOMContentLoaded', function() {
     addTouchFocusFix(document.getElementById('new-todo-link'));
     addTouchFocusFix(document.getElementById('current-category-title'));
     addTouchFocusFix(document.getElementById('sync-userid'));
+
+    // Handle refresh button
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+    }
+
+    // Handle clear button
+    const clearBtn = document.getElementById('clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+                await localforage.clear();
+                window.location.reload();
+            }
+        });
+    }
+
+    // Handle download button
+    const downloadBtn = document.getElementById('download-btn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            const data = {
+                categories: state.categories,
+                todos: state.todos,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `todo-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
 });
 // Patch for after pulling data: ensure currentCategoryId is valid and UI updates
 if (typeof window !== 'undefined') {
