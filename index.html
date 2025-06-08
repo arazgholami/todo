@@ -7,13 +7,13 @@
     <meta name="background-color" content="#ffffff">
     <meta name="description" content="A simple todo application that works offline">
     <title>ToDo</title>
-    <link rel="shortcut icon" href="./todo-icon.png?ver=1.41" type="image/png">
-    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.41">
-    <link rel="manifest" href="./manifest.json?ver=1.41">
+    <link rel="shortcut icon" href="./todo-icon.png?ver=1.42" type="image/png">
+    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.42">
+    <link rel="manifest" href="./manifest.json?ver=1.42">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?ver=1.41">
+    <link rel="stylesheet" href="./style.css?ver=1.42">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/9.0.1/uuid.min.js"></script>
     <script>
@@ -24,7 +24,7 @@
             document.head.appendChild(script);
         }
     </script>
-    <script src="script.js?ver=1.41" defer></script>
+    <script src="script.js?ver=1.42" defer></script>
 </head>
 <body>
     <button class="sidebar-toggle d-md-none">
@@ -49,7 +49,7 @@
                             <div class="card-body p-2 d-flex flex-column align-items-stretch gap-2">
                                 <label for="sync-userid" class="form-label mb-1">Sync</label>
                                 <div class="input-group mb-2">
-                                    <input type="text" id="sync-userid" class="form-control form-control-sm" style="max-width:100%;" placeholder="Enter sync code">
+                                    <input type="text" id="sync-userid" class="form-control form-control-sm" style="max-width:100%;" placeholder="Enter sync code" spellcheck="false">
                                     <button class="btn btn-outline-secondary btn-sm" type="button" id="copy-sync-btn" title="Copy">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -85,7 +85,7 @@
                     <div class="todo-input">
                         <div class="input-group align-items-center">
                             <input type="text" id="new-todo-input" class="form-control border-0 flex-grow-1" style="min-width:0;" placeholder="I want to...">
-                            <input type="url" id="new-todo-link" class="form-control border-0" placeholder="Optional link (https://)">
+                            <input type="url" id="new-todo-link" class="form-control border-0" placeholder="Link">
                             <button class="btn btn-primary" id="save-task-btn">Save</button>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
     <div class="footer">
         <a href="https://arazgholami.github.io/todo/" target="_blank" rel="noopener noreferrer" class="text-decoration-none logo-wrapper">
             <span class="logo">
-                <img src="todo.png?ver=1.41" alt="ToDo Logo">
+                <img src="todo.png?ver=1.42" alt="ToDo Logo">
                 ToDo
             </span>
         </a>
