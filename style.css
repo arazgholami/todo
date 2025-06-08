@@ -275,8 +275,7 @@ body {
     max-width: 120px;
   }
   .footer {
-    padding-bottom: 40px !important;
-    height: 90px !important;
+    height: 50px !important;
   }
 }
 .btn, .btn-primary, .btn-secondary, .btn-outline-light {
@@ -534,7 +533,7 @@ input[type="checkbox"]:checked::after {
 .sync {
     background-color: var(--color-bg-category-active);
     border: 1px solid var(--color-border-todo);
-    margin-top: 100px;
+    margin-top: 20px;
 }
 
 .sync label {
