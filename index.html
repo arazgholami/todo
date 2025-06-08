@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#000000">
+    <meta name="background-color" content="#ffffff">
     <meta name="description" content="A simple todo application that works offline">
     <title>ToDo</title>
-    <link rel="shortcut icon" href="./todo-icon.png?ver=1.40" type="image/png">
-    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.40">
-    <link rel="manifest" href="./manifest.json?ver=1.40">
+    <link rel="shortcut icon" href="./todo-icon.png?ver=1.41" type="image/png">
+    <link rel="apple-touch-icon" href="./todo-icon.png?ver=1.41">
+    <link rel="manifest" href="./manifest.json?ver=1.41">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css?ver=1.40">
+    <link rel="stylesheet" href="./style.css?ver=1.41">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/9.0.1/uuid.min.js"></script>
     <script>
@@ -23,7 +24,7 @@
             document.head.appendChild(script);
         }
     </script>
-    <script src="script.js?ver=1.40" defer></script>
+    <script src="script.js?ver=1.41" defer></script>
 </head>
 <body>
     <button class="sidebar-toggle d-md-none">
@@ -101,7 +102,7 @@
     <div class="footer">
         <a href="https://arazgholami.github.io/todo/" target="_blank" rel="noopener noreferrer" class="text-decoration-none logo-wrapper">
             <span class="logo">
-                <img src="todo.png?ver=1.40" alt="ToDo Logo">
+                <img src="todo.png?ver=1.41" alt="ToDo Logo">
                 ToDo
             </span>
         </a>
@@ -252,6 +253,14 @@
             localStorage.setItem(SYNC_CODE_KEY, syncCode);
         }
         syncUserIdInput.value = syncCode;
+
+        // Save sync code to localStorage when changed by user
+        syncUserIdInput.addEventListener('change', function() {
+            const newCode = syncUserIdInput.value.trim();
+            if (newCode) {
+                localStorage.setItem(SYNC_CODE_KEY, newCode);
+            }
+        });
 
         // NOTE: 'state' and 'saveData', 'renderApp' must be defined globally elsewhere for push/pull to work
         async function pushData() {

@@ -2,7 +2,7 @@
   "name": "ToDo",
   "short_name": "ToDo",
   "description": "Reimagined by Araz Gholami",
-  "version": "1.40",
+  "version": "1.41",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
