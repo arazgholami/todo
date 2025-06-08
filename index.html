@@ -39,7 +39,7 @@
                         <div id="categories-list"></div>
                         <div class="mt-4">
                             <div class="input-group">
-                                <input type="text" id="new-category-input" class="form-control" placeholder="New category">
+                                <input type="text" id="new-category-input" class="form-control" placeholder="New category" inputmode="text" autocomplete="off">
                                 <button class="btn btn-outline-light" id="add-category-btn">
                                     <i class="fas fa-plus"></i>
                                 </button>
@@ -49,7 +49,7 @@
                             <div class="card-body p-2 d-flex flex-column align-items-stretch gap-2">
                                 <label for="sync-userid" class="form-label mb-1">Sync</label>
                                 <div class="input-group mb-2">
-                                    <input type="text" id="sync-userid" class="form-control form-control-sm" style="max-width:100%;" placeholder="Enter sync code" spellcheck="false">
+                                    <input type="text" id="sync-userid" class="form-control form-control-sm" style="max-width:100%;" placeholder="Enter sync code" spellcheck="false" inputmode="text" autocomplete="off">
                                     <button class="btn btn-outline-secondary btn-sm" type="button" id="copy-sync-btn" title="Copy">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -81,11 +81,11 @@
                     </div>
                 </div>
                 <div class="col-md-9 col-lg-9 tasks-list">
-                    <input type="text" id="current-category-title" class="category-title-input main-content" readonly>
+                    <input type="text" id="current-category-title" class="category-title-input main-content" readonly inputmode="text" autocomplete="off">
                     <div class="todo-input">
                         <div class="input-group align-items-center">
-                            <input type="text" id="new-todo-input" class="form-control border-0 flex-grow-1" style="min-width:0;" placeholder="I want to...">
-                            <input type="url" id="new-todo-link" class="form-control border-0" placeholder="Link">
+                            <input type="text" id="new-todo-input" class="form-control border-0 flex-grow-1" style="min-width:0;" placeholder="I want to..." inputmode="text" autocomplete="off">
+                            <input type="url" id="new-todo-link" class="form-control border-0" placeholder="Link" inputmode="url" autocomplete="off">
                             <button class="btn btn-primary" id="save-task-btn">Save</button>
                         </div>
                     </div>
@@ -324,7 +324,7 @@
                 state.categories.push(...newCategories);
                 state.todos.push(...newTodos);
                 await saveData();
-                renderApp();
+                if (window.ensureValidCategoryAfterPull) window.ensureValidCategoryAfterPull();
                 showMessage(`Pulled ${newCategories.length} categories and ${newTodos.length} tasks`);
             } else {
                 showMessage("No data found for this sync code", true);

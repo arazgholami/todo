@@ -739,4 +739,25 @@ document.addEventListener('DOMContentLoaded', function() {
             scheduleNotification(todo);
         }
     });
+    // iOS PWA keyboard fix: force focus on touchend
+    function addTouchFocusFix(input) {
+        if (!input) return;
+        input.addEventListener('touchend', function() {
+            setTimeout(() => input.focus(), 0);
+        });
+    }
+    addTouchFocusFix(newCategoryInput);
+    addTouchFocusFix(newTodoInput);
+    addTouchFocusFix(document.getElementById('new-todo-link'));
+    addTouchFocusFix(document.getElementById('current-category-title'));
+    addTouchFocusFix(document.getElementById('sync-userid'));
 });
+// Patch for after pulling data: ensure currentCategoryId is valid and UI updates
+if (typeof window !== 'undefined') {
+    window.ensureValidCategoryAfterPull = function() {
+        if (!state.categories.some(c => c.id === state.currentCategoryId)) {
+            state.currentCategoryId = state.categories[0]?.id || 'default';
+        }
+        renderApp();
+    }
+}
