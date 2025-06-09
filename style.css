@@ -113,6 +113,7 @@ body {
     padding-top: 20px;
     transition: transform 0.3s ease;
     z-index: 1000;
+    padding-bottom: 40px !important;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -322,11 +323,30 @@ body {
     align-items: center;
     justify-content: space-between;
     transition: background-color 0.2s ease;
+    touch-action: pan-y pinch-zoom;
 }
+
+.todo-drag-handle {
+    cursor: grab;
+    padding: 0 8px;
+    color: var(--color-text-move-handle);
+    margin-right: 8px;
+    touch-action: none;
+}
+
+.todo-drag-handle:hover {
+    color: var(--color-text-move-handle-hover);
+}
+
+.todo-drag-handle i {
+    transform: rotate(90deg);
+}
+
 .todo-item .todo-content {
     display: flex;
     align-items: center;
     flex: 1;
+    touch-action: auto;
 }
 .todo-item .actions-div {
     display: flex;

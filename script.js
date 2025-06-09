@@ -405,15 +405,16 @@ function addTaskDragAndDropHandlers() {
     let touchStartY = 0;
 
     taskElements.forEach(el => {
-        el.setAttribute('draggable', 'true');
+        const dragHandle = el.querySelector('.todo-drag-handle');
+        if (!dragHandle) return;
 
         // Mouse events
-        el.addEventListener('dragstart', (e) => {
+        dragHandle.addEventListener('dragstart', (e) => {
             draggingEl = el;
             el.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
         });
-        el.addEventListener('dragend', () => {
+        dragHandle.addEventListener('dragend', () => {
             draggingEl = null;
             el.classList.remove('dragging');
         });
@@ -434,14 +435,14 @@ function addTaskDragAndDropHandlers() {
         });
 
         // Touch events
-        el.addEventListener('touchstart', (e) => {
+        dragHandle.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
             draggingEl = el;
             el.classList.add('dragging');
             e.preventDefault(); // Prevent scrolling while dragging
         }, { passive: false });
 
-        el.addEventListener('touchmove', (e) => {
+        dragHandle.addEventListener('touchmove', (e) => {
             if (!draggingEl) return;
             
             const touch = e.touches[0];
@@ -467,7 +468,7 @@ function addTaskDragAndDropHandlers() {
             e.preventDefault(); // Prevent scrolling while dragging
         }, { passive: false });
 
-        el.addEventListener('touchend', () => {
+        dragHandle.addEventListener('touchend', () => {
             if (draggingEl) {
                 draggingEl.classList.remove('dragging');
                 updateTaskOrderFromDOM();
@@ -496,8 +497,16 @@ function updateTaskOrderFromDOM() {
 function createTodoElement(todo) {
     const todoEl = document.createElement('div');
     todoEl.className = `todo-item ${todo.completed ? 'completed' : ''}`;
-    todoEl.draggable = true;
     todoEl.dataset.id = todo.id;
+
+    // Create drag handle
+    const dragHandle = document.createElement('div');
+    dragHandle.className = 'todo-drag-handle';
+    dragHandle.draggable = true;
+    const dragIcon = document.createElement('i');
+    dragIcon.className = 'fas fa-ellipsis-v';
+    dragHandle.appendChild(dragIcon);
+    todoEl.appendChild(dragHandle);
 
     const todoContent = document.createElement('div');
     todoContent.className = 'todo-content';
